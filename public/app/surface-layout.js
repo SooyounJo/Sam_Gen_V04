@@ -13,7 +13,8 @@ window.SURFACE_TYPES = {
   DIALOG_CENTER: 'dialog-center',
   QUICK_SETTINGS: 'quick-settings',
   NOTIFICATION_SHADE: 'notification-shade',
-  SELECTION_MODE: 'selection-mode'
+  SELECTION_MODE: 'selection-mode',
+  HEALTH_MLP: 'health-mlp'
 };
 
 window.currentSurfaceType = window.SURFACE_TYPES.FIRST_DEPTH_LIST;
@@ -133,27 +134,15 @@ window.composeSurfacePlan = function composeSurfacePlan(surfaceType, layout) {
 
   switch (surfaceType) {
     case T.LOCKSCREEN:
-      // Samsung Lock identity chrome. These slot names match the
-      // canonical Scene/Lock template (see app/rules-renderer.js
-      // ROLE_RENDERERS lookup) so the DOM node id + data-role emitted
-      // by the agent path is IDENTICAL to what the canned "Screens >
-      // Lock" scene produces. That way the Layers inspector, CSS
-      // selectors, and downstream tooling see one naming convention
-      // instead of two.
-      //   • status-bar    = signal / battery / carrier row
-      //   • lockIndicator = padlock icon at top center (Figma y=48)
-      //   • weatherDate   = "68° · Partly cloudy · Thu Apr 24" thin line
-      //   • clock         = huge center clock (renderer uses current time)
-      //   • shortcutLeft  = phone shortcut circle (bottom-left)
-      //   • shortcutRight = camera shortcut circle (bottom-right)
-      //   • gestureBar    = bottom home-gesture indicator bar
       return {
         surfaceType,
         components: [
           { id: 'status-bar',    role: 'status-bar',    zone: 'topSystem' },
           { id: 'lockIndicator', role: 'lockIndicator', zone: 'topSystem' },
-          { id: 'weatherDate',   role: 'weatherDate',   zone: 'viewing' },
-          { id: 'clock',         role: 'clock',         zone: 'viewing' },
+          { id: 'weatherDate',   role: 'weatherDate',   zone: 'viewing', variant: { date: 'Sat, May 3', temp: 24, condition: 'moon' } },
+          { id: 'clock',         role: 'clock',         zone: 'viewing', variant: { fontSize: 90, lineHeight: 66, gap: 10 } },
+          { id: 'lock-widgets',  role: 'lock-widgets',  zone: 'viewing' },
+          { id: 'running-coach', role: 'dot-running',   zone: 'interaction', variant: { state: 'idle' } },
           { id: 'shortcutLeft',  role: 'shortcutLeft',  zone: 'bottomNav', variant: { icon: 'phone' } },
           { id: 'shortcutRight', role: 'shortcutRight', zone: 'bottomNav', variant: { icon: 'camera' } },
           { id: 'gestureBar',    role: 'gestureBar',    zone: 'bottomAction' }
@@ -305,16 +294,17 @@ window.composeSurfacePlan = function composeSurfacePlan(surfaceType, layout) {
     }
 
     case T.TAB_ROOT:
-      // Home screen — filled with app icon grid (no title, no card list).
-      // app-grid expands to N individual app-icon nodes (editable each).
-      // app-dock pins 4 shortcuts at the bottom.
       return {
         surfaceType,
         components: [
           { id: 'status-bar', role: 'status-bar', zone: 'topSystem' },
-          { id: 'app-grid',   role: 'app-grid',   zone: 'interaction' },
+          { id: 'home-top-widgets', role: 'home-top-widgets', zone: 'viewing' },
+          { id: 'home-time-matrix', role: 'dot-time-matrix', zone: 'viewing' },
+          { id: 'home-mid-widgets', role: 'home-mid-widgets', zone: 'viewing' },
+          { id: 'home-music-card',  role: 'dot-music-1x2-actions', zone: 'interaction' },
           { id: 'app-dock',   role: 'app-dock',   zone: 'bottomNav',
-            content: { apps: ['Phone','Messages','Internet','Camera'] } }
+            content: { apps: ['Camera','Gallery','Blank','YT Music'] } },
+          { id: 'nav-bar', role: 'navigation-bar', zone: 'bottomAction' }
         ]
       };
 
@@ -364,6 +354,22 @@ window.composeSurfacePlan = function composeSurfacePlan(surfaceType, layout) {
           { id: 'selection-app-bar', role: 'selection-app-bar', zone: 'viewing' },
           { id: 'selection-list', role: 'list', zone: 'interaction' },
           { id: 'selection-toolbar', role: 'bottom-bar', zone: 'bottomBar' }
+        ]
+      };
+
+    case T.HEALTH_MLP:
+      return {
+        surfaceType,
+        components: [
+          { id: 'status-bar', role: 'status-bar', zone: 'topSystem' },
+          { id: 'health-header', role: 'health-header', zone: 'viewing' },
+          { id: 'health-brief', role: 'health-brief', zone: 'viewing' },
+          { id: 'health-goal-card', role: 'health-goal-card', zone: 'viewing' },
+          { id: 'health-course-card', role: 'health-course-card', zone: 'viewing' },
+          { id: 'health-weather-card', role: 'health-weather-card', zone: 'viewing' },
+          { id: 'health-jogging-card', role: 'health-jogging-card', zone: 'viewing' },
+          { id: 'health-music-card', role: 'health-music-card', zone: 'interaction' },
+          { id: 'nav-bar', role: 'navigation-bar', zone: 'bottomAction' }
         ]
       };
 
@@ -427,6 +433,9 @@ window.expandContainerComponents = function expandContainerComponents(plan, layo
     else if (comp.role === 'focus-block-group') kids = _expandFocusBlockGroup(comp, layout);
     else if (comp.role === 'detail-content')  kids = _expandDetailContent(comp, layout);
     else if (comp.role === 'app-grid')        kids = _expandAppGrid(comp, layout);
+    else if (comp.role === 'lock-widgets')    kids = _expandLockWidgets(comp, layout);
+    else if (comp.role === 'home-top-widgets') kids = _expandHomeTopWidgets(comp, layout);
+    else if (comp.role === 'home-mid-widgets') kids = _expandHomeMidWidgets(comp, layout);
     if (kids && kids.length) {
       out.push.apply(out, kids);
     } else {
@@ -629,6 +638,71 @@ function _expandDetailContent(comp, layout) {
   return items;
 }
 
+function _expandLockWidgets(comp, layout) {
+  var z = layout.zones.viewing;
+  var widgetW = 124, widgetH = 56, gap = 14;
+  var totalW = widgetW * 2 + gap;
+  var startX = z.x + (z.w - totalW) / 2;
+  var startY = 347; // Figma top: 347.37
+
+  return [
+    {
+      id: comp.id + ':battery',
+      role: 'lock-widget-battery',
+      zone: comp.zone,
+      _rect: { x: startX, y: startY, w: widgetW, h: widgetH }
+    },
+    {
+      id: comp.id + ':activity',
+      role: 'lock-widget-activity',
+      zone: comp.zone,
+      _rect: { x: startX + widgetW + gap, y: startY, w: widgetW, h: widgetH }
+    }
+  ];
+}
+
+function _expandHomeTopWidgets(comp, layout) {
+  var startX = 23, startY = 57; // Figma Group 2085670788
+  return [
+    {
+      id: comp.id + ':temp',
+      role: 'dot-temperature-1x1',
+      zone: comp.zone,
+      _rect: { x: startX, y: startY + 86, w: 82, h: 82 }
+    },
+    {
+      id: comp.id + ':date',
+      role: 'dot-date-1x1-v1-1',
+      zone: comp.zone,
+      _rect: { x: startX + 86, y: startY + 86, w: 82, h: 82 }
+    },
+    {
+      id: comp.id + ':weather',
+      role: 'dot-weather-2x1-v1-1',
+      zone: comp.zone,
+      _rect: { x: startX, y: startY, w: 168, h: 82 }
+    },
+    {
+      id: comp.id + ':schedule',
+      role: 'dot-schedule-2x2',
+      zone: comp.zone,
+      _rect: { x: startX + 174, y: startY, w: 168, h: 168 }
+    }
+  ];
+}
+
+function _expandHomeMidWidgets(comp, layout) {
+  var startX = 24, startY = 398; // Figma Group 2085670789
+  return [
+    {
+      id: comp.id + ':music',
+      role: 'dot-music-1x1',
+      zone: comp.zone,
+      _rect: { x: startX, y: startY, w: 168, h: 168 }
+    }
+  ];
+}
+
 window.resolveComponentRect = function resolveComponentRect(comp, layout, plan) {
   // If the container-expansion pass already computed a rect, use it as-is.
   if (comp._rect) return comp._rect;
@@ -809,7 +883,7 @@ window.resolveComponentRect = function resolveComponentRect(comp, layout, plan) 
     case 'weather-date':
       return {
         x: z.viewing.x,
-        y: z.viewing.y + 44,
+        y: 119, // Figma top: 119.67
         w: z.viewing.w,
         h: 28
       };
@@ -819,7 +893,7 @@ window.resolveComponentRect = function resolveComponentRect(comp, layout, plan) 
     case 'lock-time':
       return {
         x: z.viewing.x,
-        y: z.viewing.y + 78,
+        y: 154, // Below weatherDate
         w: z.viewing.w,
         h: 176
       };
@@ -832,20 +906,74 @@ window.resolveComponentRect = function resolveComponentRect(comp, layout, plan) 
         h: 28
       };
 
-    case 'shortcutLeft':
+    case 'lock-widgets':
       return {
-        x: z.bottomNav.x + 6,
-        y: z.bottomNav.y + Math.round((z.bottomNav.h - 47) / 2),
-        w: 47,
-        h: 47
+        x: z.viewing.x,
+        y: 347,
+        w: z.viewing.w,
+        h: 56
       };
 
-    case 'shortcutRight':
+    case 'dot-running':
       return {
-        x: z.bottomNav.x + z.bottomNav.w - 47 - 6,
-        y: z.bottomNav.y + Math.round((z.bottomNav.h - 47) / 2),
-        w: 47,
-        h: 47
+        x: (vw - 310) / 2,
+        y: 699,
+        w: 310,
+        h: 78
+      };
+
+    case 'shortcutLeft':
+    case 'shortcutRight': {
+      var isRight = comp.role === 'shortcutRight';
+      var sideGap = 28;
+      var bottomGap = 36;
+      var size = 54;
+      return {
+        x: isRight ? (vw - sideGap - size) : sideGap,
+        y: vh - bottomGap - size - 44, // Figma top: 791.82
+        w: size,
+        h: size
+      };
+    }
+
+    case 'navigation-bar':
+      return {
+        x: 0,
+        y: vh - 22,
+        w: vw,
+        h: 22
+      };
+
+    case 'home-top-widgets':
+      return {
+        x: 23,
+        y: 57,
+        w: vw - 46,
+        h: 168
+      };
+
+    case 'home-mid-widgets':
+      return {
+        x: 24,
+        y: 398,
+        w: vw - 48,
+        h: 168
+      };
+
+    case 'dot-time-matrix':
+      return {
+        x: 29,
+        y: 229,
+        w: vw - 58,
+        h: 165
+      };
+
+    case 'dot-music-1x2-actions':
+      return {
+        x: 22,
+        y: 574,
+        w: vw - 44,
+        h: 165
       };
 
     case 'lock-shortcuts':   // legacy combined role
@@ -863,6 +991,21 @@ window.resolveComponentRect = function resolveComponentRect(comp, layout, plan) 
         w: vw,
         h: 24
       };
+
+    case 'health-header':
+      return { x: 25, y: 105, w: vw - 50, h: 32 };
+    case 'health-brief':
+      return { x: 25, y: 153, w: vw - 50, h: 48 };
+    case 'health-goal-card':
+      return { x: 25, y: 220, w: 355, h: 96 };
+    case 'health-course-card':
+      return { x: 25, y: 338, w: 171, h: 172 };
+    case 'health-weather-card':
+      return { x: 207, y: 338, w: 173, h: 78 };
+    case 'health-jogging-card':
+      return { x: 207, y: 431, w: 173, h: 78 };
+    case 'health-music-card':
+      return { x: 24, y: 532, w: 356, h: 159 };
 
     case 'unlock-hint':
       return {
@@ -1125,8 +1268,10 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
 
   switch (comp.role) {
     case 'status-bar':
+      var sbv = (comp && comp.variant) || {};
+      var sbTheme = sbv.theme || (window.currentSurfaceType === window.SURFACE_TYPES.HEALTH_MLP ? 'light' : 'dark');
       return A.StatusBar
-        ? A.StatusBar({ theme: 'dark', battery: 69, carrier: 'K-Arts' })
+        ? A.StatusBar({ theme: sbTheme, battery: 69, carrier: 'TJG' })
         : '<div style="height:100%;display:flex;align-items:center;justify-content:space-between;' +
             _T('caption', { color: 'statusBar' }) +
           '"><span>12:45</span><span>69%</span></div>';
@@ -3042,6 +3187,982 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
       '</div>';
     }
 
+    case 'run-panel': {
+      var rpv = (comp && comp.variant) || {};
+      // Reference (state2) grid extracted from image: 15×16 centers.
+      // Keep step/dot from existing spec so the density matches.
+      var step = 10.65;
+      var dot = 5.65;
+      var r = dot / 2;
+      // Spec: 165.38×165.38, step 10.65, dot 5.65 → 16×16 grid.
+      var cols = 16;
+      var rows = 16;
+      var grid = '';
+      for (var yy = 0; yy < rows; yy++) {
+        for (var xx = 0; xx < cols; xx++) {
+          // Figma exports use `left/top` for ellipse; center = (left/top) + r.
+          grid += '<circle cx="' + (r + xx * step) + '" cy="' + (r + yy * step) + '" r="' + r + '" fill="#303030" />';
+        }
+      }
+
+      // Render runner dots for a frame. Animation is dot-level via CSS (run-dot--fN),
+      // so motion happens "on the dot grid" like Time Matrix — no panel blink.
+      function _circles(points, frameKey) {
+        var s = '';
+        var seen = {};
+        for (var i = 0; i < points.length; i++) {
+          var p = points[i];
+          var gx = p[0] | 0;
+          var gy = p[1] | 0;
+          if (gx < 0) gx = 0;
+          if (gy < 0) gy = 0;
+          if (gx > cols - 1) gx = cols - 1;
+          if (gy > rows - 1) gy = rows - 1;
+          var key = gx + ',' + gy;
+          if (seen[key]) continue;
+          seen[key] = 1;
+          s += '<circle class="run-dot run-dot--' + frameKey + '" cx="' + (r + gx * step) + '" cy="' + (r + gy * step) + '" r="' + r + '" fill="#FF7F24" />';
+        }
+        return s;
+      }
+
+      // Default frame (state2) from earlier extraction.
+      var f2 = [
+        [9,4],[10,4],
+        [6,5],[7,5],[9,5],[10,5],
+        [5,6],[7,6],[8,6],
+        [7,7],[8,7],[9,7],[11,7],
+        [6,8],[7,8],[9,8],[10,8],
+        [5,9],[6,9],[7,9],
+        [5,10],[6,10],[7,10],[8,10],
+        [5,11],[6,11],[8,11],[9,11],
+        [3,12],[4,12],[5,12],[7,12],[8,12],
+        [2,13],[3,13],[6,13],[7,13]
+      ];
+
+      // If explicit frames are provided (from Figma), prefer them.
+      // Otherwise derive f1/f3 from f2 so motion is visible.
+      var frames = Array.isArray(rpv.frames) ? rpv.frames : null;
+      function _deriveFrame(mode) {
+        // mode: -1 (pre), +1 (post)
+        var out = [];
+        for (var i = 0; i < f2.length; i++) {
+          var x = f2[i][0];
+          var y = f2[i][1];
+          // Keep head/torso stable.
+          if (y >= 11) {
+            // Legs swing.
+            x += mode;
+            if (y === 13) y = 12;
+          } else if (y >= 8 && y <= 10) {
+            // Arms/torso micro shift.
+            if (x >= 8) x += mode;
+          }
+          out.push([x, y]);
+        }
+        // Add a couple extra dots to accentuate movement.
+        if (mode < 0) out.push([8, 12], [9, 11]);
+        else out.push([4, 12], [5, 11]);
+        return out;
+      }
+      var f1 = (frames && Array.isArray(frames[0]) && frames[0].length) ? frames[0] : _deriveFrame(-1);
+      var f3 = (frames && Array.isArray(frames[2]) && frames[2].length) ? frames[2] : _deriveFrame(+1);
+      var f2use = (frames && Array.isArray(frames[1]) && frames[1].length) ? frames[1] : f2;
+
+      return '' +
+        '<div class="dot-card run-panel" data-state="' + (rpv.state || 'idle') + '">' +
+          '<svg class="run-panel__svg" width="165.38" height="165.38" viewBox="0 0 165.38 165.38" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            grid +
+            '<g class="run-frame f1">' + _circles(f1, 'f1') + '</g>' +
+            '<g class="run-frame f2">' + _circles(f2use, 'f2') + '</g>' +
+            '<g class="run-frame f3">' + _circles(f3, 'f3') + '</g>' +
+          '</svg>' +
+        '</div>';
+    }
+
+    case 'dot-goal': {
+      var gv = (comp && comp.variant) || {};
+      var gTitle = gv.title || '오늘의 목표';
+      var gTime = gv.time || '01:42:43';
+      var gSuffix = gv.timeSuffix || '이내';
+      var gDist = gv.distance || '15km';
+      return '' +
+        '<div class="dot-card dot-goal" data-state="' + (gv.state || 'idle') + '">' +
+          '<div class="dot-goal__title">' + gTitle + '</div>' +
+          '<div class="dot-goal__unit">' +
+            '<div class="dot-goal__timeRow">' +
+              '<div class="dot-goal__time">' + gTime + '</div>' +
+              '<div class="dot-goal__suffix">' + gSuffix + '</div>' +
+            '</div>' +
+            '<div class="dot-goal__distance">' + gDist + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-call': {
+      var cv = (comp && comp.variant) || {};
+      var cName = cv.name || 'Michael Jones';
+      var cPhone = cv.phone || '+1 (555) 456-7890';
+      // Always show a person image (fallback to bundled avatar).
+      var avatar = cv.avatar || '/assets/avatar-michael.png';
+      var avatarHtml =
+        '<img class="dot-call__avatarImg" src="' + avatar + '" alt="" ' +
+          'onerror="this.onerror=null;this.src=\'/assets/avatar-michael.png\';" />';
+      return '' +
+        '<div class="dot-card dot-call" data-state="' + (cv.state || 'idle') + '">' +
+          '<div class="dot-call__avatar">' + avatarHtml + '</div>' +
+          '<div class="dot-call__text">' +
+            '<div class="dot-call__name">' + cName + '</div>' +
+            '<div class="dot-call__phone">' + cPhone + '</div>' +
+          '</div>' +
+          '<div class="dot-call__arrow">' +
+            // Same arrow geometry/direction as Running coach; only color differs.
+            '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--0" cx="6" cy="16" r="2.1" fill="#FF7F24" opacity="0" />' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--1" cx="10.2" cy="16" r="2.1" fill="#FF7F24" opacity="0" />' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--2" cx="14.4" cy="16" r="2.1" fill="#FF7F24" opacity="0" />' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--3" cx="18.6" cy="16" r="2.1" fill="#FF7F24" opacity="0" />' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--4" cx="22.8" cy="16" r="2.1" fill="#FF7F24" opacity="0" />' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--5" cx="27" cy="16" r="2.1" fill="#FF7F24" opacity="0" />' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--6" cx="22.8" cy="11.8" r="2.1" fill="#FF7F24" opacity="0" />' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--7" cx="18.6" cy="7.6" r="2.1" fill="#FF7F24" opacity="0" />' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--8" cx="22.8" cy="20.2" r="2.1" fill="#FF7F24" opacity="0" />' +
+              '<circle class="dot-call-arrow-dot dot-call-arrow-dot--9" cx="18.6" cy="24.4" r="2.1" fill="#FF7F24" opacity="0" />' +
+            '</svg>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'health-header':
+      return '<div style="width:100%;height:100%;display:flex;align-items:center;font-family:var(--font);font-weight:700;font-size:26.6px;color:#000;">오늘의 러닝 브리프</div>';
+    case 'health-brief':
+      return '<div style="width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;font-family:var(--font);font-weight:400;font-size:16.3px;color:#000;line-height:1.3;">오늘의 에너지 점수는 매우 좋음입니다.<br/>5.2km 코스를 준비했어요.</div>';
+    case 'health-goal-card':
+      return '<div style="width:100%;height:100%;background:#1A1D1C;border-radius:10.5px;padding:15px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;color:#fff;position:relative;overflow:hidden;">' +
+        '<div style="font-family:var(--font);font-weight:600;font-size:15.7px;margin-bottom:10px;">오늘의 목표</div>' +
+        '<div style="display:flex;align-items:baseline;gap:10px;">' +
+          '<div style="font-family:var(--font-dot);font-size:35.3px;letter-spacing:3.5px;">01:42:43</div>' +
+          '<div style="font-family:var(--font);font-weight:400;font-size:10.5px;opacity:0.8;">이내에</div>' +
+        '</div>' +
+        '<div style="position:absolute;right:15px;top:50%;transform:translateY(-50%);font-family:var(--font-dot);font-size:35.3px;letter-spacing:3.5px;">15km</div>' +
+      '</div>';
+    case 'health-course-card':
+      return '<div style="width:100%;height:100%;background:url(\'https://www.figma.com/api/mcp/asset/6e2b38ba-80aa-48e9-8f64-d1c437032962\') center/cover;border-radius:17.9px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative;">' +
+        '<div style="font-family:var(--font);font-weight:700;font-size:15.7px;margin-bottom:10px;">추천 코스</div>' +
+        '<div style="width:50px;height:36px;transform:rotate(90deg);"><img src="https://www.figma.com/api/mcp/asset/7b08d885-48a8-4676-811c-0bb3624cd11f" style="width:100%;height:100%;"/></div>' +
+      '</div>';
+    case 'health-weather-card':
+      return '<div style="width:100%;height:100%;background:#FFB01C;border-radius:97px;padding:0 24px;box-sizing:border-box;display:flex;align-items:center;gap:15px;color:#1B1C21;">' +
+        '<img src="https://www.figma.com/api/mcp/asset/e71720af-6f3d-4797-801a-06375bc13590" style="width:35px;height:35px;"/>' +
+        '<div style="display:flex;flex-direction:column;align-items:center;flex:1;">' +
+          '<div style="font-family:var(--font);font-weight:600;font-size:13.2px;">Sydney</div>' +
+          '<div style="font-family:var(--font);font-weight:600;font-size:13.2px;">Sunny</div>' +
+        '</div>' +
+      '</div>';
+    case 'health-jogging-card':
+      return '<div style="width:100%;height:100%;background:#1A1D1C;border-radius:97px;padding:0 33px;box-sizing:border-box;display:flex;align-items:center;gap:15px;color:#FFB01C;">' +
+        '<img src="https://www.figma.com/api/mcp/asset/a5f7bc1d-9edb-4f62-9cbe-7810b2b03ecc" style="width:19px;height:24px;"/>' +
+        '<div style="display:flex;flex-direction:column;align-items:center;flex:1;">' +
+          '<div style="font-family:var(--font);font-weight:600;font-size:13.2px;">조깅</div>' +
+          '<div style="font-family:var(--font);font-weight:600;font-size:13.2px;">10:35</div>' +
+        '</div>' +
+      '</div>';
+    case 'health-music-card':
+      return '<div style="width:100%;height:100%;background:#1A1D1C;border-radius:15.7px;padding:16.7px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;color:#fff;position:relative;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+          '<div style="display:flex;gap:16.7px;align-items:center;">' +
+            '<div style="width:67px;height:67px;background:#3B393E;border-radius:21px;display:flex;align-items:center;justify-content:center;">' +
+              '<img src="https://www.figma.com/api/mcp/asset/07bf9bb5-48a8-4676-811c-0bb3624cd11f" style="width:31px;height:31px;"/>' +
+            '</div>' +
+            '<div style="font-family:var(--font);font-weight:600;font-size:15.7px;line-height:1.3;">오늘 날씨에 딱 맞는<br/>플레이리스트</div>' +
+          '</div>' +
+          '<img src="https://www.figma.com/api/mcp/asset/4092920a-0a05-4aa6-941d-467885b38742" style="width:25px;height:25px;"/>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:12.5px;">' +
+          '<div style="font-family:Roboto;font-weight:400;font-size:14.6px;color:#AEABB1;">Jim Hall - Concierto</div>' +
+          '<div style="height:2px;background:#3B393E;position:relative;"><div style="position:absolute;left:0;top:0;bottom:0;width:26%;background:#FCFAFE;"></div></div>' +
+        '</div>' +
+        '<img src="https://www.figma.com/api/mcp/asset/76826c5a-eca2-4d39-b800-77033a17c88b" style="position:absolute;right:16.7px;top:50%;transform:translateY(-50%);width:4px;height:13.6px;"/>' +
+      '</div>';
+
+    case 'dot-gallery-img': {
+      var gv = (comp && comp.variant) || {};
+      var active = gv.activeIndex != null ? gv.activeIndex : 0;
+      var img = gv.img || '';
+      var imgHtml = img ? '<img class="dot-gimg__img" src="' + img + '" alt="" />' : '';
+      return '' +
+        '<div class="dot-card dot-gimg" data-state="' + (gv.state || 'idle') + '">' +
+          imgHtml +
+          '<div class="dot-gimg__fade" aria-hidden="true"></div>' +
+          '<div class="dot-gimg__dots" aria-hidden="true">' +
+            '<span class="' + (active === 0 ? 'is-active' : '') + '"></span>' +
+            '<span class="' + (active === 1 ? 'is-active' : '') + '"></span>' +
+            '<span class="' + (active === 2 ? 'is-active' : '') + '"></span>' +
+            '<span class="' + (active === 3 ? 'is-active' : '') + '"></span>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-gallery-frame1': {
+      var f1v = (comp && comp.variant) || {};
+      var labs = Array.isArray(f1v.labels) ? f1v.labels : ['18','19','20','21','22','23','24','25','Today'];
+      // 3×3 tiles (48×48) with per-tile image geometry per Figma.
+      // Use per-tile images when provided (thumb-2..thumb-10), fallback to legacy single image.
+      var imgSrc = f1v.img || '/assets/dot-gallery/image-114131.png';
+      var imgs = Array.isArray(f1v.imgs) ? f1v.imgs : null;
+      var geom = [
+        // 0: image114307 (flip)
+        'width:69.43px;height:92.58px;left:calc(50% - 69.43px/2 + 0.7px);top:calc(50% - 92.58px/2 + 0.74px);transform:scaleX(-1);',
+        // 1: image114306 (flip) ·height only, left/right/top
+        'height:91.21px;left:-3.07px;right:-0.22px;top:-32.79px;transform:scaleX(-1);',
+        // 2: image114305
+        'height:64.73px;left:-3.08px;right:-1.06px;top:-12.3px;',
+        // 3: image114308
+        'height:83.94px;left:0px;right:0.8px;top:-13.32px;',
+        // 4: image114309
+        'width:68.54px;height:91.38px;left:calc(50% - 68.54px/2 + 6.14px);top:calc(50% - 91.38px/2 + 8.34px);',
+        // 5: image114310
+        'width:50.51px;height:67.26px;left:calc(50% - 50.51px/2 + 0.2px);top:calc(50% - 67.26px/2 + 8.58px);',
+        // 6: image114311 (flip)
+        'width:61.58px;height:109.5px;left:calc(50% - 61.58px/2 + 0.53px);top:calc(50% - 109.5px/2 - 15.39px);transform:scaleX(-1);',
+        // 7: image114312
+        'height:84.27px;left:-6.15px;right:-2.06px;top:-22.55px;',
+        // 8: image114313
+        'width:48.81px;height:86.77px;left:calc(50% - 48.81px/2 + 0.38px);top:calc(50% - 86.77px/2 + 0.91px);'
+      ];
+      var out = '<div class="dot-card dot-gframe1" data-state="' + (f1v.state || 'idle') + '">';
+      for (var i = 0; i < 9; i++) {
+        var label = labs[i] != null ? String(labs[i]) : String(i + 18);
+        var isToday = (i === 8);
+        var src = (imgs && imgs[i]) ? imgs[i] : imgSrc;
+        out += '' +
+          '<div class="dot-gcell' + (isToday ? ' is-today' : '') + '">' +
+            '<img class="dot-gcell__img" src="' + src + '" alt="" style="' + geom[i] + '" onerror="this.style.display=`none`;" />' +
+            '<div class="dot-gcell__shade" aria-hidden="true"></div>' +
+            '<div class="dot-gcell__label' + (isToday ? ' is-today' : '') + '">' + label + '</div>' +
+          '</div>';
+      }
+      out += '</div>';
+      return out;
+    }
+
+    case 'dot-gallery-frame3': {
+      var f3v = (comp && comp.variant) || {};
+      var active3 = f3v.activeIndex != null ? f3v.activeIndex : 0;
+      var labs3 = Array.isArray(f3v.labels) ? f3v.labels : ['18','19','20','21','22','23','24','25','Today'];
+      // Tile layout: big tile + right column, with dot pagination.
+      var imgSrc3 = f3v.img || '/assets/dot-gallery/image-114131.png';
+      var imgs3 = Array.isArray(f3v.imgs) ? f3v.imgs : null;
+      var tile = function (label, isBig, op, src) {
+        var useSrc = src || imgSrc3;
+        return '' +
+          '<div class="dot-gtile' + (isBig ? ' is-big' : '') + '">' +
+            '<img class="dot-gtile__img" src="' + useSrc + '" alt="" style="--op:' + op + ';" onerror="this.style.display=`none`;" />' +
+            '<div class="dot-gtile__shade" aria-hidden="true"></div>' +
+            '<div class="dot-gtile__label">' + label + '</div>' +
+          '</div>';
+      };
+      return '' +
+        '<div class="dot-card dot-gframe3" data-state="' + (f3v.state || 'idle') + '">' +
+          '<div class="dot-gframe3__big">' + tile(labs3[0] || '18', true, '28% 28%', (imgs3 && imgs3[0]) ? imgs3[0] : null) + '</div>' +
+          '<div class="dot-gframe3__right">' +
+            tile(labs3[1] || '19', false, '70% 18%', (imgs3 && imgs3[1]) ? imgs3[1] : null) +
+            tile(labs3[2] || '20', false, '82% 35%', (imgs3 && imgs3[2]) ? imgs3[2] : null) +
+          '</div>' +
+          '<div class="dot-gframe3__grid">' +
+            tile(labs3[3] || '21', false, '60% 30%', (imgs3 && imgs3[3]) ? imgs3[3] : null) +
+            tile(labs3[4] || '22', false, '60% 30%', (imgs3 && imgs3[4]) ? imgs3[4] : null) +
+            tile(labs3[5] || '23', false, '60% 30%', (imgs3 && imgs3[5]) ? imgs3[5] : null) +
+            tile(labs3[6] || '24', false, '60% 30%', (imgs3 && imgs3[6]) ? imgs3[6] : null) +
+            tile(labs3[7] || '25', false, '60% 30%', (imgs3 && imgs3[7]) ? imgs3[7] : null) +
+            tile(labs3[8] || 'Today', false, '60% 30%', (imgs3 && imgs3[8]) ? imgs3[8] : null) +
+          '</div>' +
+          '<div class="dot-gframe3__dots" aria-hidden="true">' +
+            '<span class="' + (active3 === 0 ? 'is-active' : '') + '"></span>' +
+            '<span class="' + (active3 === 1 ? 'is-active' : '') + '"></span>' +
+            '<span class="' + (active3 === 2 ? 'is-active' : '') + '"></span>' +
+            '<span class="' + (active3 === 3 ? 'is-active' : '') + '"></span>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-camera': {
+      var camv = (comp && comp.variant) || {};
+      var img = camv.img || '';
+      var imgHtml = img ? '<img class="dot-cam__img" src="' + img + '" alt="" />' : '';
+      return '' +
+        '<div class="dot-card dot-cam" data-state="' + (camv.state || 'idle') + '">' +
+          imgHtml +
+          '<div class="dot-cam__fade" aria-hidden="true"></div>' +
+          '<div class="dot-cam__shutter" aria-hidden="true"></div>' +
+          '<div class="dot-cam__expand" aria-hidden="true">' +
+            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+              '<path d="M15 3h6v6h-2V6.41l-4.29 4.3-1.42-1.42L17.59 5H15V3Z" fill="#FFFFFF"/>' +
+              '<path d="M9 21H3v-6h2v3.59l4.29-4.3 1.42 1.42L6.41 19H9v2Z" fill="#FFFFFF"/>' +
+            '</svg>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-music-1x1': {
+      var mv = (comp && comp.variant) || {};
+      var artist = mv.artist || 'Jimmy Hall';
+      var album = mv.album || 'Album';
+      var song = mv.song || 'Concierto';
+      var current = mv.current || '0:40';
+      var remaining = mv.remaining || '-1:10';
+      var barW = mv.barFull != null ? mv.barFull : 120;
+      var barTrack = mv.barTrack != null ? mv.barTrack : 31.48;
+      return '' +
+        '<div class="dot-card dot-music dot-music1" data-state="' + (mv.state || 'idle') + '">' +
+          '<div class="dot-music1__top">' +
+            '<div class="dot-music1__artist">' + artist + '</div>' +
+            '<div class="dot-music1__album">' + album + '</div>' +
+          '</div>' +
+          '<div class="dot-music__bottom">' +
+            '<div class="dot-music__song">' + song + '</div>' +
+            '<div class="dot-music__timeInfo">' +
+              '<div class="dot-music__timeRow">' +
+                '<div class="dot-music__time dot-music__time--current">' + current + '</div>' +
+                '<div class="dot-music__time dot-music__time--remaining">' + remaining + '</div>' +
+              '</div>' +
+              '<div class="dot-music__bar" style="--bar-w:' + barW + 'px;--bar-track:' + barTrack + 'px;">' +
+                '<div class="dot-music__barFill" aria-hidden="true"></div>' +
+                '<div class="dot-music__barTrack" aria-hidden="true"></div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-music-1x2-actions': {
+      var mv2 = (comp && comp.variant) || {};
+      var artist2 = mv2.artist || 'Jimmy Hall';
+      var album2 = mv2.album || 'Album';
+      var song2 = mv2.song || 'Concierto';
+      var current2 = mv2.current || '0:40';
+      var remaining2 = mv2.remaining || '-1:10';
+      var barW2 = mv2.barFull != null ? mv2.barFull : 292;
+      var barTrack2 = mv2.barTrack != null ? mv2.barTrack : 77;
+      return '' +
+        '<div class="dot-card dot-music dot-music2 dot-music2--actions" data-state="' + (mv2.state || 'idle') + '">' +
+          '<div class="dot-music2__top">' +
+            '<div class="dot-music2__artistBlock">' +
+              '<div class="dot-music2__artist">' + artist2 + '</div>' +
+              '<div class="dot-music2__album">' + album2 + '</div>' +
+            '</div>' +
+            '<div class="dot-music2__btnUnit" aria-hidden="true">' +
+              '<div class="dot-music2__btn">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+                  '<path d="M12 21s-7.5-4.6-9.6-8.7C.4 8.6 2.7 6 5.6 6c1.7 0 3.2.9 4 2.2C10.3 6.9 11.8 6 13.5 6c2.9 0 5.2 2.6 3.2 6.3C19.5 16.4 12 21 12 21Z" fill="#FFFFFF"/>' +
+                '</svg>' +
+              '</div>' +
+              '<div class="dot-music2__btn">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+                  '<path d="M3 5.5h18v13H3v-13Z" stroke="#FFFFFF" stroke-width="2" fill="none" />' +
+                  '<path d="M5 17c1.9 0 3.6.8 4.8 2" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" fill="none" />' +
+                  '<path d="M5 13.5c3.1 0 5.8 1.3 7.8 3.2" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" fill="none" />' +
+                '</svg>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="dot-music__bottom dot-music2__bottom">' +
+            '<div class="dot-music2__playRow">' +
+              '<div class="dot-music__song">' + song2 + '</div>' +
+              '<div class="dot-music2__eq" aria-hidden="true">' +
+                '<div class="dot-music2__eqCol is-tall">' +
+                  '<span></span><span></span><span></span><span></span><span></span>' +
+                '</div>' +
+                '<div class="dot-music2__eqCol is-mid">' +
+                  '<span></span><span></span><span></span>' +
+                '</div>' +
+                '<div class="dot-music2__eqCol is-small">' +
+                  '<span></span>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="dot-music__timeInfo dot-music__timeInfo--wide">' +
+              '<div class="dot-music__timeRow dot-music__timeRow--wide">' +
+                '<div class="dot-music__time dot-music__time--current">' + current2 + '</div>' +
+                '<div class="dot-music__time dot-music__time--remaining">' + remaining2 + '</div>' +
+              '</div>' +
+              '<div class="dot-music__bar dot-music__bar--wide" style="--bar-w:' + barW2 + 'px;--bar-track:' + barTrack2 + 'px;">' +
+                '<div class="dot-music__barFill" aria-hidden="true"></div>' +
+                '<div class="dot-music__barTrack" aria-hidden="true"></div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-music-1x2-icon': {
+      var mv3 = (comp && comp.variant) || {};
+      var title3 = (mv3.title || '오늘 날씨에 딱 맞는\n플레이리스트');
+      var subtitle3 = (mv3.subtitle || 'Jim Hall - Concierto');
+      var barW3 = mv3.barFull != null ? mv3.barFull : 292;
+      var barTrack3 = mv3.barTrack != null ? mv3.barTrack : 77;
+      var safeTitle = String(title3).replace(/\n/g, '<br/>');
+      return '' +
+        '<div class="dot-card dot-music dot-music3 dot-music3--icon" data-state="' + (mv3.state || 'idle') + '">' +
+          '<div class="dot-music3__top">' +
+            '<div class="dot-music3__icon" aria-hidden="true">' +
+              '<span class="dot-music3__iconBg"></span>' +
+              '<svg class="dot-music3__noteSvg" width="29.56" height="29.26" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+                // Dot-note icon reconstructed from Figma ellipse positions (percent grid) ·r≈3.5 on 64 canvas
+                '<circle cx="27.98" cy="3.49" r="3.5" fill="#FFFFFF"/>' +   // x=38.28, y=0
+                '<circle cx="35.66" cy="3.49" r="3.5" fill="#FFFFFF"/>' +   // x=50.99, y=0
+                '<circle cx="44.25" cy="3.49" r="3.5" fill="#FFFFFF"/>' +   // x=63.69, y=0
+                '<circle cx="52.39" cy="3.49" r="3.5" fill="#FFFFFF"/>' +   // x=76.41, y=0
+                '<circle cx="60.52" cy="3.49" r="3.5" fill="#FFFFFF"/>' +   // x=89.11, y=0
+                '<circle cx="19.85" cy="3.49" r="3.5" fill="#FFFFFF"/>' +   // x=25.57, y=0
+
+                '<circle cx="27.98" cy="11.62" r="3.5" fill="#FFFFFF"/>' +  // x=38.28, y=12.71
+                '<circle cx="44.25" cy="11.62" r="3.5" fill="#FFFFFF"/>' +  // x=63.69, y=12.71
+                '<circle cx="60.52" cy="11.62" r="3.5" fill="#FFFFFF"/>' +  // x=89.11, y=12.71
+                '<circle cx="19.85" cy="11.62" r="3.5" fill="#FFFFFF"/>' +  // x=25.57, y=12.71
+                '<circle cx="35.66" cy="11.62" r="3.5" fill="#FFFFFF"/>' +  // x=50.99, y=12.71
+                '<circle cx="52.39" cy="11.62" r="3.5" fill="#FFFFFF"/>' +  // x=76.41, y=12.71
+
+                '<circle cx="27.98" cy="19.76" r="3.5" fill="#FFFFFF"/>' +  // x=38.28, y=25.43
+                '<circle cx="44.25" cy="19.76" r="3.5" fill="#FFFFFF"/>' +  // x=63.69, y=25.43
+                '<circle cx="60.52" cy="19.76" r="3.5" fill="#FFFFFF"/>' +  // x=89.11, y=25.43
+                '<circle cx="19.85" cy="19.76" r="3.5" fill="#FFFFFF"/>' +  // x=25.57, y=25.43
+                '<circle cx="35.66" cy="19.76" r="3.5" fill="#FFFFFF"/>' +  // x=50.99, y=25.43
+                '<circle cx="52.39" cy="19.76" r="3.5" fill="#FFFFFF"/>' +  // x=76.41, y=25.43
+
+                '<circle cx="19.85" cy="28.80" r="3.5" fill="#FFFFFF"/>' +  // x=25.57, y=38.14
+                '<circle cx="60.52" cy="28.80" r="3.5" fill="#FFFFFF"/>' +  // x=89.11, y=38.14
+
+                '<circle cx="19.85" cy="36.94" r="3.5" fill="#FFFFFF"/>' +  // x=25.57, y=50.85
+                '<circle cx="60.52" cy="36.94" r="3.5" fill="#FFFFFF"/>' +  // x=89.11, y=50.85
+
+                '<circle cx="19.85" cy="45.18" r="3.5" fill="#FFFFFF"/>' +  // x=25.57, y=63.57
+                '<circle cx="60.52" cy="45.18" r="3.5" fill="#FFFFFF"/>' +  // x=89.11, y=63.57
+
+                '<circle cx="11.62" cy="53.32" r="3.5" fill="#FFFFFF"/>' +  // x=12.71, y=76.28
+                '<circle cx="3.49"  cy="53.32" r="3.5" fill="#FFFFFF"/>' +  // x=0,     y=76.28
+                '<circle cx="52.39" cy="53.32" r="3.5" fill="#FFFFFF"/>' +  // x=63.7,  y=76.28
+                '<circle cx="19.85" cy="53.32" r="3.5" fill="#FFFFFF"/>' +  // x=25.57, y=76.28
+                '<circle cx="60.52" cy="53.32" r="3.5" fill="#FFFFFF"/>' +  // x=89.11, y=76.28
+
+                '<circle cx="11.62" cy="61.45" r="3.5" fill="#FFFFFF"/>' +  // x=12.71, y=89
+                '<circle cx="3.49"  cy="61.45" r="3.5" fill="#FFFFFF"/>' +  // x=0,     y=89
+                '<circle cx="52.39" cy="61.45" r="3.5" fill="#FFFFFF"/>' +  // x=63.7,  y=89
+                '<circle cx="52.39" cy="53.32" r="3.5" fill="#FFFFFF"/>' +  // x=76.41? (kept as spec's 63.7 block)
+                '<circle cx="52.39" cy="61.45" r="3.5" fill="#FFFFFF"/>' +  // duplicate-safe (dedup handled by SVG renderer)
+              '</svg>' +
+            '</div>' +
+            '<div class="dot-music3__title">' + safeTitle + '</div>' +
+          '</div>' +
+          '<div class="dot-music__bottom dot-music3__bottom">' +
+            '<div class="dot-music3__name">' + subtitle3 + '</div>' +
+            '<div class="dot-music__bar dot-music__bar--wide dot-music3__bar" style="--bar-w:' + barW3 + 'px;--bar-track:' + barTrack3 + 'px;">' +
+              '<div class="dot-music__barFill" aria-hidden="true"></div>' +
+              '<div class="dot-music__barTrack" aria-hidden="true"></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-clock-2x1': {
+      var ck = (comp && comp.variant) || {};
+      var t = ck.time || '11:33';
+      var p = ck.period || 'AM';
+      return '' +
+        '<div class="dot-card dot-clock21" data-state="' + (ck.state || 'idle') + '">' +
+          '<div class="dot-clock21__time">' + t + '</div>' +
+          '<div class="dot-clock21__period">' + p + '</div>' +
+        '</div>';
+    }
+
+    case 'dot-time-matrix': {
+      // Dot-matrix time panel:
+      // - full background dot grid (inactive dots)
+      // - active orange dots overlay (time + weekday + day-of-month)
+      // - left aligned, no clipping from inner padding/containers
+      // Also exposes data-dot-count so the lit-dot count can be verified.
+      var mv = (comp && comp.variant) || {};
+      var now = new Date();
+      var h24 = now.getHours();
+      var mm = String(now.getMinutes()).padStart(2, '0');
+      var isAM = h24 < 12;
+      var h12 = h24 % 12;
+      if (h12 === 0) h12 = 12;
+      var hh = String(h12).padStart(2, '0');
+      var period = isAM ? 'AM' : 'PM';
+      var weekday = ['SUN','MON','TUE','WED','THU','FRI','SAT'][now.getDay()];
+      var month = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][now.getMonth()];
+      var day = String(now.getDate()).padStart(2, '0');
+
+      var lineTime = (mv.time || (hh + ':' + mm));
+      var lineMeta = (mv.meta || (period + ' ' + weekday));
+      // Show day-of-month as a separate 2-digit block to avoid right clipping.
+      var dayDigits = (mv.dayDigits || day);
+
+      var DOT_COLOR = mv.dotColor || '#FF7F24';
+      // No solid background panel — only gray background dots.
+      var BG_DOT = mv.bgDotColor || 'rgba(255,255,255,0.16)';
+
+      // 5x7 dot matrix patterns for needed characters.
+      var P = {
+        '0': ['01110','10001','10001','10001','10001','10001','01110'],
+        '1': ['00100','01100','00100','00100','00100','00100','01110'],
+        '2': ['01110','10001','00001','00010','00100','01000','11111'],
+        '3': ['11110','00001','00001','01110','00001','00001','11110'],
+        '4': ['00010','00110','01010','10010','11111','00010','00010'],
+        '5': ['11111','10000','10000','11110','00001','00001','11110'],
+        '6': ['00110','01000','10000','11110','10001','10001','01110'],
+        '7': ['11111','00001','00010','00100','01000','01000','01000'],
+        '8': ['01110','10001','10001','01110','10001','10001','01110'],
+        '9': ['01110','10001','10001','01111','00001','00010','11100'],
+        ':': ['00000','00100','00100','00000','00100','00100','00000'],
+        ' ': ['00000','00000','00000','00000','00000','00000','00000'],
+        'A': ['01110','10001','10001','11111','10001','10001','10001'],
+        'D': ['11110','10001','10001','10001','10001','10001','11110'],
+        'E': ['11111','10000','10000','11110','10000','10000','11111'],
+        'F': ['11111','10000','10000','11110','10000','10000','10000'],
+        'H': ['10001','10001','10001','11111','10001','10001','10001'],
+        'I': ['01110','00100','00100','00100','00100','00100','01110'],
+        'J': ['00111','00010','00010','00010','00010','10010','01100'],
+        'L': ['10000','10000','10000','10000','10000','10000','11111'],
+        'M': ['10001','11011','10101','10101','10001','10001','10001'],
+        'N': ['10001','11001','10101','10011','10001','10001','10001'],
+        'O': ['01110','10001','10001','10001','10001','10001','01110'],
+        'P': ['11110','10001','10001','11110','10000','10000','10000'],
+        'R': ['11110','10001','10001','11110','10100','10010','10001'],
+        'S': ['01111','10000','10000','01110','00001','00001','11110'],
+        'T': ['11111','00100','00100','00100','00100','00100','00100'],
+        'U': ['10001','10001','10001','10001','10001','10001','01110'],
+        'W': ['10001','10001','10001','10101','10101','10101','01010'],
+        'Y': ['10001','10001','01010','00100','00100','00100','00100']
+      };
+
+      function _normText(s) {
+        return String(s || '').toUpperCase().replace(/[^0-9A-Z: ]/g, ' ');
+      }
+
+      // Panel grid (fixed): 340×180, step 8px with margin 10px.
+      var panelW = 340;
+      var panelH = 180;
+      var step = 8;
+      var margin = 10;
+      var r = 2.8;
+      var cols = Math.floor((panelW - margin * 2) / step) + 1;
+      var rows = Math.floor((panelH - margin * 2) / step) + 1;
+
+      function _putText(set, text, gx0, gy0) {
+        var t = _normText(text);
+        var charW = 5;
+        var charH = 7;
+        var gap = 1;
+        for (var ci = 0; ci < t.length; ci++) {
+          var ch = t[ci];
+          var pat = P[ch] || P[' '];
+          var baseX = gx0 + ci * (charW + gap);
+          for (var ry = 0; ry < charH; ry++) {
+            var row = pat[ry] || '00000';
+            for (var rx = 0; rx < charW; rx++) {
+              if (row[rx] !== '1') continue;
+              var gx = baseX + rx;
+              var gy = gy0 + ry;
+              if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) continue;
+              set[gx + ',' + gy] = 1;
+            }
+          }
+        }
+      }
+
+      var active = {};
+      // Left aligned layout: time on top, meta on bottom-left, day digits bottom-right.
+      _putText(active, lineTime, 0, 2);
+      _putText(active, lineMeta, 0, 11);
+      _putText(active, String(dayDigits).padStart(2, '0'), cols - 11, 11);
+
+      var bgDots = '';
+      for (var yy = 0; yy < rows; yy++) {
+        for (var xx = 0; xx < cols; xx++) {
+          var cx = margin + xx * step;
+          var cy = margin + yy * step;
+          bgDots += '<circle class="dot-timemat__bgDot" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + BG_DOT + '" />';
+        }
+      }
+
+      var onDots = '';
+      var dotIndex = 0;
+      for (var k in active) {
+        var parts = k.split(',');
+        var gx = parseInt(parts[0], 10);
+        var gy = parseInt(parts[1], 10);
+        var cx2 = margin + gx * step;
+        var cy2 = margin + gy * step;
+        onDots += '<circle class="dot-timemat__dot" cx="' + cx2 + '" cy="' + cy2 + '" r="' + r + '" fill="' + DOT_COLOR + '" style=\"--i:' + dotIndex + ';\" />';
+        dotIndex++;
+      }
+      var totalDots = dotIndex;
+
+      return '' +
+        '<div class="dot-card dot-timemat" ' +
+          'data-state="' + (mv.state || 'idle') + '" ' +
+          'data-dot-count="' + totalDots + '" ' +
+          'data-time="' + lineTime + '" data-meta="' + lineMeta + '" data-day="' + dayDigits + '" ' +
+          'title="dot-count: ' + totalDots + '">' +
+          '<svg class="dot-timemat__svg" width="340" height="180" viewBox="0 0 340 180" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+            bgDots +
+            onDots +
+          '</svg>' +
+        '</div>';
+    }
+
+    case 'dot-schedule-2x2': {
+      var sv = (comp && comp.variant) || {};
+      var date = sv.date || 'May 15';
+      var items = Array.isArray(sv.items) ? sv.items : [];
+      while (items.length < 4) items.push({ text: 'Schedule item', tone: 'muted' });
+      var row = function (it) {
+        var tone = (it && it.tone) || 'muted';
+        var bulletClass = tone === 'accent' ? 'is-accent' : 'is-dark';
+        var textClass = tone === 'accent' ? 'is-accent' : (tone === 'strong' ? 'is-strong' : 'is-muted');
+        return '' +
+          '<div class="dot-sch__row">' +
+            '<span class="dot-sch__bullet ' + bulletClass + '" aria-hidden="true"></span>' +
+            '<span class="dot-sch__text ' + textClass + '">' + (it.text || '') + '</span>' +
+          '</div>';
+      };
+      return '' +
+        '<div class="dot-card dot-sch dot-sch22" data-state="' + (sv.state || 'idle') + '">' +
+          '<div class="dot-sch__unit">' +
+            '<div class="dot-sch__date">' + date + '</div>' +
+            '<div class="dot-sch__list">' +
+              row(items[0]) +
+              row(items[1]) +
+              row(items[2]) +
+              row(items[3]) +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-schedule-4x2': {
+      var sv2 = (comp && comp.variant) || {};
+      var date2 = sv2.date || 'May 15';
+      var items2 = Array.isArray(sv2.items) ? sv2.items : [];
+      while (items2.length < 4) items2.push({ text: 'Schedule item', time: '00:00', tone: 'muted' });
+      var row2 = function (it) {
+        var tone = (it && it.tone) || 'muted';
+        var bulletClass = tone === 'accent' ? 'is-accent' : 'is-dark';
+        var textClass = tone === 'accent' ? 'is-accent' : (tone === 'strong' ? 'is-strong' : 'is-muted');
+        var timeClass = tone === 'strong' ? 'is-strong' : 'is-time';
+        return '' +
+          '<div class="dot-sch__row dot-sch__row--wide">' +
+            '<span class="dot-sch__bullet ' + bulletClass + '" aria-hidden="true"></span>' +
+            '<span class="dot-sch__text ' + textClass + '">' + (it.text || '') + '</span>' +
+            '<span class="dot-sch__time ' + timeClass + '">' + (it.time || '') + '</span>' +
+          '</div>';
+      };
+      return '' +
+        '<div class="dot-card dot-sch dot-sch42" data-state="' + (sv2.state || 'idle') + '">' +
+          '<div class="dot-sch__unit dot-sch__unit--wide">' +
+            '<div class="dot-sch__date dot-sch__date--wide">' + date2 + '</div>' +
+            '<div class="dot-sch__list dot-sch__list--wide">' +
+              row2(items2[0]) +
+              row2(items2[1]) +
+              row2(items2[2]) +
+              row2(items2[3]) +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-total-steps-2x1': {
+      var st = (comp && comp.variant) || {};
+      var stTitle = st.title || 'TOTAL STEPS';
+      var stCount = st.count || '10,235';
+      return '' +
+        '<div class="dot-card dot-steps21" data-state="' + (st.state || 'idle') + '">' +
+          '<div class="dot-steps21__title">' + stTitle + '</div>' +
+          '<div class="dot-steps21__count">' + stCount + '</div>' +
+        '</div>';
+    }
+
+    case 'dot-temperature-1x1': {
+      var tv = (comp && comp.variant) || {};
+      var val = tv.value != null ? String(tv.value) : '14';
+      var unit = tv.unit || '℃';
+      return '' +
+        '<div class="dot-card dot-temp11" data-state="' + (tv.state || 'idle') + '">' +
+          '<div class="dot-temp11__center">' +
+            '<div class="dot-temp11__value">' + val + '</div>' +
+            '<div class="dot-temp11__unit">' + unit + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-weather-1x1': {
+      var wv = (comp && comp.variant) || {};
+      // Sun icon as dot-matrix inside 46.37×46.37 box, centered.
+      return '' +
+        '<div class="dot-card dot-w11" data-state="' + (wv.state || 'idle') + '">' +
+          '<svg class="dot-w11__sun" width="46.37" height="46.37" viewBox="0 0 46.37 46.37" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+            // outer ring
+            '<circle cx="23.185" cy="2.32" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="38.13" cy="8.07" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="44.05" cy="23.185" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="38.13" cy="38.3" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="23.185" cy="44.05" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="8.1" cy="38.3" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="2.32" cy="23.185" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="7.55" cy="8.07" r="2.17" fill="#FFFFFF"/>' +
+            // inner grid (uniform 5x5 rounded)
+            '<circle cx="17.3" cy="11.5" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="23.185" cy="11.5" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="29.1" cy="11.5" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="11.5" cy="17.3" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="17.3" cy="17.3" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="23.185" cy="17.3" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="29.1" cy="17.3" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="34.9" cy="17.3" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="11.5" cy="23.185" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="17.3" cy="23.185" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="23.185" cy="23.185" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="29.1" cy="23.185" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="34.9" cy="23.185" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="11.5" cy="29.1" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="17.3" cy="29.1" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="23.185" cy="29.1" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="29.1" cy="29.1" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="34.9" cy="29.1" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="17.3" cy="34.9" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="23.185" cy="34.9" r="2.17" fill="#FFFFFF"/>' +
+            '<circle cx="29.1" cy="34.9" r="2.17" fill="#FFFFFF"/>' +
+          '</svg>' +
+        '</div>';
+    }
+
+    case 'dot-date-1x1-v1-1': {
+      var dv1 = (comp && comp.variant) || {};
+      var now = new Date();
+      var months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+      var month = months[now.getMonth()];
+      var day = now.getDate();
+      var text1 = dv1.text ? String(dv1.text).replace(/\\n/g, '<br/>') : (month + '<br/>' + day);
+      return '' +
+        '<div class="dot-card dot-date11 dot-date11--dark" data-state="' + (dv1.state || 'idle') + '">' +
+          '<div class="dot-date11__text">' + text1 + '</div>' +
+        '</div>';
+    }
+
+    case 'dot-date-1x1-v1-2': {
+      var dv2 = (comp && comp.variant) || {};
+      var now = new Date();
+      var months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+      var month = months[now.getMonth()];
+      var day = now.getDate();
+      var text2 = dv2.text ? String(dv2.text).replace(/\\n/g, '<br/>') : (month + '<br/>' + day);
+      return '' +
+        '<div class="dot-card dot-date11 dot-date11--light" data-state="' + (dv2.state || 'idle') + '">' +
+          '<div class="dot-date11__text dot-date11__text--light">' + text2 + '</div>' +
+        '</div>';
+    }
+
+    case 'dot-weather-2x1-v1-1': {
+      var w2 = (comp && comp.variant) || {};
+      var loc = w2.location || 'Seoul';
+      var wt = w2.weather || 'Sunny';
+      // Reuse dot-sun but sized/positioned per spec and dark color.
+      return '' +
+        '<div class="dot-card dot-w21" data-state="' + (w2.state || 'idle') + '">' +
+          '<svg class="dot-w21__sun" width="41.7" height="41.7" viewBox="0 0 46.37 46.37" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+            // outer ring
+            '<circle cx="23.185" cy="2.32" r="2.17" fill="#191919"/>' +
+            '<circle cx="38.13" cy="8.07" r="2.17" fill="#191919"/>' +
+            '<circle cx="44.05" cy="23.185" r="2.17" fill="#191919"/>' +
+            '<circle cx="38.13" cy="38.3" r="2.17" fill="#191919"/>' +
+            '<circle cx="23.185" cy="44.05" r="2.17" fill="#191919"/>' +
+            '<circle cx="8.1" cy="38.3" r="2.17" fill="#191919"/>' +
+            '<circle cx="2.32" cy="23.185" r="2.17" fill="#191919"/>' +
+            '<circle cx="7.55" cy="8.07" r="2.17" fill="#191919"/>' +
+            // inner grid (uniform 5x5 rounded)
+            '<circle cx="17.3" cy="11.5" r="2.17" fill="#191919"/>' +
+            '<circle cx="23.185" cy="11.5" r="2.17" fill="#191919"/>' +
+            '<circle cx="29.1" cy="11.5" r="2.17" fill="#191919"/>' +
+            '<circle cx="11.5" cy="17.3" r="2.17" fill="#191919"/>' +
+            '<circle cx="17.3" cy="17.3" r="2.17" fill="#191919"/>' +
+            '<circle cx="23.185" cy="17.3" r="2.17" fill="#191919"/>' +
+            '<circle cx="29.1" cy="17.3" r="2.17" fill="#191919"/>' +
+            '<circle cx="34.9" cy="17.3" r="2.17" fill="#191919"/>' +
+            '<circle cx="11.5" cy="23.185" r="2.17" fill="#191919"/>' +
+            '<circle cx="17.3" cy="23.185" r="2.17" fill="#191919"/>' +
+            '<circle cx="23.185" cy="23.185" r="2.17" fill="#191919"/>' +
+            '<circle cx="29.1" cy="23.185" r="2.17" fill="#191919"/>' +
+            '<circle cx="34.9" cy="23.185" r="2.17" fill="#191919"/>' +
+            '<circle cx="11.5" cy="29.1" r="2.17" fill="#191919"/>' +
+            '<circle cx="17.3" cy="29.1" r="2.17" fill="#191919"/>' +
+            '<circle cx="23.185" cy="29.1" r="2.17" fill="#191919"/>' +
+            '<circle cx="29.1" cy="29.1" r="2.17" fill="#191919"/>' +
+            '<circle cx="34.9" cy="29.1" r="2.17" fill="#191919"/>' +
+            '<circle cx="17.3" cy="34.9" r="2.17" fill="#191919"/>' +
+            '<circle cx="23.185" cy="34.9" r="2.17" fill="#191919"/>' +
+            '<circle cx="29.1" cy="34.9" r="2.17" fill="#191919"/>' +
+          '</svg>' +
+          '<div class="dot-w21__text">' +
+            '<div class="dot-w21__loc">' + loc + '</div>' +
+            '<div class="dot-w21__weather">' + wt + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-running': {
+      // DOT dataset — Running coach pill (297×75). Markup is class-based so
+      // motion/state can be applied purely via CSS.
+      var drv = (comp && comp.variant) || {};
+      var title = drv.title || 'Running coach';
+      var subtitle = drv.subtitle || '달릴 준비 되셨나요?';
+      return '' +
+        '<div class="dot-card dot-running" data-state="' + (drv.state || 'idle') + '">' +
+          '<div class="dot-running__icon">' +
+            '<span class="dot-running__icon-bg" aria-hidden="true"></span>' +
+            '<svg class="dot-running__icon-svg" width="24" height="32" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+              // Runner icon: 3-frame discrete loop (CSS keyframes).
+              '<g class="dot-runner-frame dot-runner-frame--a">' +
+                '<circle cx="14" cy="4" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="4" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="7" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="7" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="16" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="16" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="19" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="19" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="20" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="23" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="8" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="5" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="22" r="1.8" fill="white"/>' +
+                '<circle cx="8" cy="25" r="1.8" fill="white"/>' +
+                '<circle cx="5" cy="25" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="22" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="25" r="1.8" fill="white"/>' +
+                '<circle cx="20" cy="28" r="1.8" fill="white"/>' +
+              '</g>' +
+              '<g class="dot-runner-frame dot-runner-frame--b">' +
+                '<circle cx="14" cy="4" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="4" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="7" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="7" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="16" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="16" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="19" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="19" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="20" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="23" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="8" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="5" cy="16" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="22" r="1.8" fill="white"/>' +
+                '<circle cx="8" cy="28" r="1.8" fill="white"/>' +
+                '<circle cx="5" cy="28" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="22" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="25" r="1.8" fill="white"/>' +
+                '<circle cx="20" cy="25" r="1.8" fill="white"/>' +
+              '</g>' +
+              '<g class="dot-runner-frame dot-runner-frame--c">' +
+                '<circle cx="14" cy="4" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="4" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="7" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="7" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="16" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="16" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="19" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="19" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="13" r="1.8" fill="white"/>' +
+                '<circle cx="20" cy="16" r="1.8" fill="white"/>' +
+                '<circle cx="23" cy="16" r="1.8" fill="white"/>' +
+                '<circle cx="8" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="5" cy="10" r="1.8" fill="white"/>' +
+                '<circle cx="11" cy="22" r="1.8" fill="white"/>' +
+                '<circle cx="8" cy="25" r="1.8" fill="white"/>' +
+                '<circle cx="5" cy="28" r="1.8" fill="white"/>' +
+                '<circle cx="14" cy="22" r="1.8" fill="white"/>' +
+                '<circle cx="17" cy="28" r="1.8" fill="white"/>' +
+                '<circle cx="20" cy="28" r="1.8" fill="white"/>' +
+              '</g>' +
+            '</svg>' +
+          '</div>' +
+          '<div class="dot-running__text">' +
+            '<div class="dot-running__title">' + title + '</div>' +
+            '<div class="dot-running__subtitle">' + subtitle + '</div>' +
+          '</div>' +
+          '<div class="dot-running__dots-arrow">' +
+            '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+              // Discrete dot-by-dot reveal (left→right), then reset (CSS keyframes).
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--0" cx="6" cy="16" r="2.1" fill="#1B1C21" />' +
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--1" cx="10.2" cy="16" r="2.1" fill="#1B1C21" />' +
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--2" cx="14.4" cy="16" r="2.1" fill="#1B1C21" />' +
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--3" cx="18.6" cy="16" r="2.1" fill="#1B1C21" />' +
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--4" cx="22.8" cy="16" r="2.1" fill="#1B1C21" />' +
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--5" cx="27" cy="16" r="2.1" fill="#1B1C21" />' +
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--6" cx="22.8" cy="11.8" r="2.1" fill="#1B1C21" />' +
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--7" cx="18.6" cy="7.6" r="2.1" fill="#1B1C21" />' +
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--8" cx="22.8" cy="20.2" r="2.1" fill="#1B1C21" />' +
+              '<circle class="dot-run-arrow-dot dot-run-arrow-dot--9" cx="18.6" cy="24.4" r="2.1" fill="#1B1C21" />' +
+            '</svg>' +
+          '</div>' +
+        '</div>';
+    }
+
+    case 'dot-running-compact': {
+      // DOT dataset — compact pill (164×82) with dotted runner icon.
+      var dr2v = (comp && comp.variant) || {};
+      var label2 = dr2v.label || '조깅';
+      var time2 = dr2v.time || '10:35';
+      return '' +
+        '<div class="dot-card dot-running2" data-state="' + (dr2v.state || 'idle') + '">' +
+          '<div class="dot-running2__human">' +
+            '<svg width="24" height="32" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+              '<circle cx="14" cy="4" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="17" cy="4" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="14" cy="7" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="17" cy="7" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="11" cy="10" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="14" cy="10" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="11" cy="13" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="14" cy="13" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="11" cy="16" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="14" cy="16" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="11" cy="19" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="14" cy="19" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="17" cy="10" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="20" cy="13" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="23" cy="13" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="8" cy="10" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="5" cy="13" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="11" cy="22" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="8" cy="25" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="5" cy="25" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="14" cy="22" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="17" cy="25" r="1.8" fill="#FFB01C"/>' +
+              '<circle cx="20" cy="28" r="1.8" fill="#FFB01C"/>' +
+            '</svg>' +
+          '</div>' +
+          '<div class="dot-running2__text">' +
+            '<div class="dot-running2__label">' + label2 + '</div>' +
+            '<div class="dot-running2__time">' + time2 + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
     case 'clock':         // canonical Scene template name
     case 'lock-clock':    // kebab alias
     case 'lock-time': {   // legacy alias
@@ -3461,6 +4582,60 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
         '</div>' +
       '</div>';
     }
+
+    case 'lock-widgets':
+      return '<div class="lock-widgets-container" style="display:flex;gap:14px;justify-content:center;">' +
+        window.renderAtomicForRole({ role: 'lock-widget-battery' }, { w: 124, h: 56 }) +
+        window.renderAtomicForRole({ role: 'lock-widget-activity' }, { w: 124, h: 56 }) +
+      '</div>';
+
+    case 'lock-widget-battery':
+      return '<div class="lock-widget lock-widget--battery" style="width:124px;height:56px;background:rgba(23,23,26,0.3);backdrop-filter:blur(5.4px);border-radius:20px;display:flex;align-items:center;justify-content:center;gap:9px;">' +
+        '<div class="battery-icon" style="width:45px;height:43px;position:relative;">' +
+          '<svg width="45" height="43" viewBox="0 0 45 43" fill="none"><circle cx="22.5" cy="21.5" r="18" stroke="rgba(255,255,255,0.2)" stroke-width="3"/><path d="M22.5 3.5 A18 18 0 0 1 38.5 30" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>' +
+          '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.8);font-weight:600;">29</div>' +
+        '</div>' +
+        '<div class="battery-icon" style="width:45px;height:43px;position:relative;">' +
+          '<svg width="45" height="43" viewBox="0 0 45 43" fill="none"><circle cx="22.5" cy="21.5" r="18" stroke="rgba(255,255,255,0.2)" stroke-width="3"/><path d="M22.5 3.5 A18 18 0 1 1 10 35" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg>' +
+          '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.8);font-weight:600;">74</div>' +
+        '</div>' +
+      '</div>';
+
+    case 'lock-widget-activity':
+      return '<div class="lock-widget lock-widget--activity" style="width:124px;height:56px;background:rgba(23,23,26,0.3);backdrop-filter:blur(5.4px);border-radius:20px;display:flex;align-items:center;padding:0 12px;gap:9px;">' +
+        '<div style="width:43px;height:43px;background:rgba(255,255,255,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;">' +
+          '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z" fill="#fff"/></svg>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:2px;">' +
+          '<div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;background:rgba(255,255,255,0.3);border-radius:50%;"></div><span style="font-size:9px;color:rgba(255,255,255,0.86);font-weight:600;">4,209</span></div>' +
+          '<div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;background:rgba(255,255,255,0.3);border-radius:50%;"></div><span style="font-size:9px;color:rgba(255,255,255,0.86);font-weight:600;">25</span></div>' +
+          '<div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;background:rgba(255,255,255,0.3);border-radius:50%;"></div><span style="font-size:9px;color:rgba(255,255,255,0.86);font-weight:600;">650</span></div>' +
+        '</div>' +
+      '</div>';
+
+    case 'home-top-widgets':
+      return '<div class="home-top-widgets-container" style="display:grid;grid-template-columns:168px 168px;grid-template-rows:82px 82px;gap:6px;">' +
+        '<div style="grid-column:1;grid-row:1;">' + window.renderAtomicForRole({ role: 'dot-weather-2x1-v1-1' }, { w: 168, h: 82 }) + '</div>' +
+        '<div style="grid-column:1;grid-row:2;display:flex;gap:4px;">' +
+          window.renderAtomicForRole({ role: 'dot-temperature-1x1' }, { w: 82, h: 82 }) +
+          window.renderAtomicForRole({ role: 'dot-date-1x1-v1-1' }, { w: 82, h: 82 }) +
+        '</div>' +
+        '<div style="grid-column:2;grid-row:1/span 2;">' + window.renderAtomicForRole({ role: 'dot-schedule-2x2' }, { w: 168, h: 168 }) + '</div>' +
+      '</div>';
+
+    case 'home-mid-widgets':
+      return '<div class="home-mid-widgets-container" style="display:flex;gap:6px;">' +
+        window.renderAtomicForRole({ role: 'dot-music-1x1' }, { w: 168, h: 168 }) +
+      '</div>';
+
+    case 'navigation-bar':
+      var nbTheme = window.currentSurfaceType === window.SURFACE_TYPES.HEALTH_MLP ? 'light' : 'dark';
+      var nbColor = nbTheme === 'light' ? '#000' : '#fff';
+      return '<div class="navigation-bar" style="width:100%;height:100%;display:flex;align-items:center;justify-content:space-around;padding:0 60px;">' +
+        '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="' + nbColor + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="6" y="6" width="12" height="12" rx="4" stroke="' + nbColor + '" stroke-width="2"/></svg>' +
+        '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M8 6h8M8 12h8M8 18h8" stroke="' + nbColor + '" stroke-width="2" stroke-linecap="round"/></svg>' +
+      '</div>';
 
     case 'app-dock': {
       // Samsung Home dock — real PNG app icons, label-less.

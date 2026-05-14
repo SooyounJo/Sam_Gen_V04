@@ -1,4 +1,3 @@
-import Head from "next/link";
 import Script from "next/script";
 import { useEffect } from "react";
 
@@ -42,38 +41,39 @@ export default function ThemePage() {
       </div>
 
       <main className="theme-main" style={{ height: "calc(100vh - 80px)", overflow: "hidden" }}>
-        <div className="layout-row">
-          <div className="editor-col">
-            <div className="editor-panel" id="editor-panel">
-              <header className="editor-head" id="editor-head">
-                <button type="button" className="editor-panel-toggle" id="editor-panel-toggle" aria-expanded="true" aria-controls="editor-body" title="편집 패널 접기/펼치기">
-                  <span className="toggle-arrow" aria-hidden="true">▼</span>
-                  <span style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: 0, textAlign: "left" }}>
-                    <span id="editor-scope-hint" className="editor-scope-hint" aria-live="polite"></span>
-                  </span>
-                </button>
-                <button type="button" id="btn-show-all-vars" className="secondary" style={{ fontSize: "12px", padding: "6px 12px", display: "none", whiteSpace: "nowrap" }}>
-                  모든 변수 보기
-                </button>
-              </header>
-              <div className="editor-body" id="editor-body"></div>
+        <div className="layout-row" id="theme-layout-row">
+          {/* Left Column: Detail / Animation Test (Black Background) */}
+          <div className="detail-col" id="detail-col">
+            <div className="detail-view" id="detail-view">
+              <div className="detail-stage-container">
+                <div className="detail-stage" id="detail-stage">
+                  <div style={{ color: "var(--text-3)", fontSize: "14px" }}>Select a card to test animation</div>
+                </div>
+              </div>
+              <div className="detail-controls" id="detail-controls" style={{ display: "none" }}></div>
             </div>
           </div>
 
+          {/* Right Column: Full Preview Grid (Mint Background) */}
           <div className="preview-col" id="preview-col">
-            <div className="preview-mode-toggle" id="preview-mode-toggle" role="tablist" aria-label="Preview mode">
-              <button type="button" className="preview-mode-btn active" data-mode="cards" aria-selected="true">
-                Cards
-              </button>
-              <button type="button" className="preview-mode-btn" data-mode="screen" aria-selected="false">
-                Screen
-              </button>
+            <div className="preview-header-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+              <div className="preview-mode-toggle" id="preview-mode-toggle" role="tablist" aria-label="Preview mode">
+                <button type="button" className="preview-mode-btn active" data-mode="cards" aria-selected="true">
+                  Cards
+                </button>
+                <button type="button" className="preview-mode-btn" data-mode="screen" aria-selected="false">
+                  Screen
+                </button>
+              </div>
             </div>
+            
             <h2 id="preview-mode-title" style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.5px", margin: "12px 0 16px" }}>
               Live preview · all themed cards
             </h2>
+
             <div className="preview-theme-scope" id="preview-theme-scope">
               <div className="preview-grid" id="preview-grid"></div>
+              
               <div className="preview-screen-wrap" id="preview-screen-wrap" style={{ display: "none" }}>
                 <div className="preview-screen-grid" id="preview-screen-grid"></div>
                 <div className="preview-screen-hint">
@@ -91,7 +91,9 @@ export default function ThemePage() {
 
       <Script src="/typography-rules.js" strategy="beforeInteractive" />
       <Script src="/app/atomics.js" strategy="beforeInteractive" />
-      <Script src="/app/surface-layout.js" strategy="beforeInteractive" />
+      <Script src="/app/surface-layout.js?v=runpanel-dot-level-1" strategy="beforeInteractive" />
+      <Script src="/datasets/normalPreviewCards.js" strategy="beforeInteractive" />
+      <Script src="/datasets/dotPreviewCards.js?v=runpanel-frames-3" strategy="beforeInteractive" />
       <Script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" strategy="beforeInteractive" />
       <Script src="/theme-logic.js" strategy="lazyOnload" />
     </>

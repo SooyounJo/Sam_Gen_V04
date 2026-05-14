@@ -137,6 +137,169 @@
   a { color: var(--primary); text-decoration: none; }
   a:hover { text-decoration: underline; }
 
+  /* ==========================================================================
+     DOT cards (for post-animation data swap)
+     - class-based markup
+     - animation hook via [data-state]
+     ========================================================================== */
+  .dot-card {
+    position: relative;
+    background: #FFFFFF;
+    border-radius: 93px;
+    color: #1B1C21;
+    font-family: 'Pretendard', var(--font), -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: hidden;
+    contain: paint;
+  }
+  .dot-card[data-state="enter"] { animation: dotEnter 420ms cubic-bezier(0.2,0,0,1) both; }
+  .dot-card[data-state="exit"]  { animation: dotExit  260ms cubic-bezier(0.2,0,0,1) both; }
+  @keyframes dotEnter { from { opacity: 0; transform: translateY(6px) scale(0.985); } to { opacity: 1; transform: none; } }
+  @keyframes dotExit  { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(6px) scale(0.985); } }
+
+  /* Dot Running (297×75) */
+  .dot-running {
+    width: 297px;
+    height: 75px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 13px 18px 13px 15px;
+  }
+  .dot-running__icon {
+    width: 50px;
+    height: 50px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .dot-running__icon-bg {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #FFB01C;
+  }
+  /* placeholder mark (swap to svg/bg-image later) */
+  .dot-running__icon-mark {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 42px;
+    height: 38.65px;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+  }
+  .dot-running__text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+  }
+  .dot-running__title {
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 110%;
+    font-feature-settings: 'pnum' on, 'lnum' on;
+    color: #1B1C21;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dot-running__subtitle {
+    font-weight: 600;
+    font-size: 12.6px;
+    line-height: 110%;
+    font-feature-settings: 'pnum' on, 'lnum' on;
+    color: #949494;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dot-running__dots {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2.4px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transform: rotate(90deg);
+  }
+  .dot-running__dots span {
+    width: 4.2px;
+    height: 4.2px;
+    border-radius: 999px;
+    background: #1B1C21;
+    display: block;
+  }
+
+  /* Dot Running compact (164×82) */
+  .dot-running2 {
+    width: 164px;
+    height: 82px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    gap: 12px;
+  }
+  .dot-running2__human {
+    width: 18px;
+    height: 23px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .dot-running2__human::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 0 40%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 0 87%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 17% 26%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 17% 74%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 33% 0%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 33% 13%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 33% 26%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 33% 39%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 33% 52%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 33% 65%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 50% 0%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 50% 13%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 50% 39%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 50% 65%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 66% 39%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 66% 74%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 83% 87%/6px 6px,
+      radial-gradient(circle, #FFB01C 62%, transparent 64%) 100% 87%/6px 6px;
+    background-repeat: no-repeat;
+  }
+  .dot-running2__text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding: 0;
+    min-width: 0;
+    flex: 1;
+  }
+  .dot-running2__label,
+  .dot-running2__time {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 130%;
+    text-align: right;
+    font-feature-settings: 'pnum' on, 'lnum' on;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dot-running2__label { color: #191919; }
+  .dot-running2__time  { color: #FFB01C; }
+
   header {
     padding: 20px 32px;
     border-bottom: 1px solid var(--border);
@@ -513,7 +676,9 @@
     isolation: isolate;
   }
   .preview-cell .stage {
-    overflow: visible;
+    /* Prevent transformed children from painting over neighbor cells. */
+    overflow: hidden;
+    border-radius: 24px;
   }
   .preview-cell .stage .stage-scale {
     transform-origin: top left;
@@ -937,6 +1102,20 @@ const PREVIEW_CARDS = [
     editSections: ['Page', 'Card globals'],
     role: 'progress-track',
     variant: { left: '1:42', right: '2:18', percent: 40 }
+  },
+  // Dot cards (new dataset) — keep as separate roles so they can be animated
+  // purely via CSS (data-state) without touching legacy card renderers.
+  {
+    name: 'Running coach (dot)',
+    editSections: ['Page', 'Card globals'],
+    role: 'dot-running',
+    variant: { title: 'Running coach', subtitle: '달릴 준비 되셨나요?' }
+  },
+  {
+    name: 'Running time (dot)',
+    editSections: ['Page', 'Card globals'],
+    role: 'dot-running-compact',
+    variant: { label: '조깅', time: '10:35' }
   }
 ];
 
@@ -957,6 +1136,8 @@ function previewRectForCard(card) {
   if (role === 'action-row') return { w: 408, h: 96, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'media-card') return { w: 360, h: 200, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'progress-track') return { w: 360, h: 52, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-running') return { w: 297, h: 75, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-running-compact') return { w: 164, h: 82, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'focus-block' && variant.kind === 'weather') return { w: 415, h: 218, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'focus-block' && variant.kind === 'calendar') return { w: 300, h: 128, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'focus-block' && variant.kind === 'input') return { w: 300, h: 168, scale: TOOLKIT_PREVIEW_SCALE };

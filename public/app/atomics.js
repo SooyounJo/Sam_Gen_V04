@@ -60,22 +60,25 @@
     var p = props || {};
     // Unified carrier label: K-Arts across QS, Notif, AND Lock.
     var carrier = p.carrier || 'K-Arts';
+    var theme = p.theme || 'dark';
+    var color = theme === 'light' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.8)';
+    var filter = theme === 'light' ? 'invert(1)' : 'none';
 
     // Wi-Fi (18×18)
     var wifi =
-      '<div style="position:relative;width:18px;height:18px;flex-shrink:0;overflow:hidden;">' +
+      '<div style="position:relative;width:18px;height:18px;flex-shrink:0;overflow:hidden;filter:' + filter + ';">' +
         absImg('wifi.svg', '11.11% -0.11% 11.11% 0.68%') +
       '</div>';
 
     // Cellular (18×18 with 14×14 centered inside)
     var cellular =
-      '<div style="position:relative;width:18px;height:18px;flex-shrink:0;overflow:hidden;">' +
+      '<div style="position:relative;width:18px;height:18px;flex-shrink:0;overflow:hidden;filter:' + filter + ';">' +
         '<img src="' + ASSET + 'cellular.svg" style="position:absolute;left:50%;top:50%;width:14px;height:14px;transform:translate(-50%,-50%);" alt="" />' +
       '</div>';
 
     // Battery (two subtract SVGs side by side: 15.414×16.515 + 8.808×16.515)
     var battery =
-      '<div style="display:flex;align-items:center;flex-shrink:0;">' +
+      '<div style="display:flex;align-items:center;flex-shrink:0;filter:' + filter + ';">' +
         '<img src="' + ASSET + 'battery-left.svg"  style="width:15.414px;height:16.515px;display:block;" alt="" />' +
         '<img src="' + ASSET + 'battery-right.svg" style="width:8.808px;height:16.515px;display:block;" alt="" />' +
       '</div>';
@@ -90,7 +93,7 @@
              'display:flex;align-items:center;justify-content:flex-end;gap:6px;' +
              'padding:6px 10px;box-sizing:border-box;">' +
              '<span style="font-family:' + FONT_BOLD + ';font-weight:700;font-size:15px;line-height:12px;' +
-               'letter-spacing:0.15px;color:rgba(255,255,255,0.8);white-space:nowrap;flex-shrink:0;">' + carrier + '</span>' +
+               'letter-spacing:0.15px;color:' + color + ';white-space:nowrap;flex-shrink:0;">' + carrier + '</span>' +
              '<div style="flex:1 0 0;align-self:stretch;"></div>' +
              '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">' +
                wifi + cellular + battery +
@@ -350,6 +353,12 @@
   // Small 56×56 rounded icon container (with 30×30 icon inside)
   // activeBg=true → Samsung Blue-ish off-white bg, false → dim glass bg
   function qsToggleIcon(iconAsset, iconInset, activeBg) {
+    // Some legacy QS assets were removed during refactors; avoid 404 spam.
+    // If the SVG isn't present, render no icon (layout still works).
+    if (iconAsset === 'wifi3-a.svg' || iconAsset === 'wifi3-b.svg' || iconAsset === 'wifi3-c.svg' ||
+        iconAsset === 'wifi3-d.svg' || iconAsset === 'mobile-data-qs.svg' || iconAsset === 'bluetooth.svg') {
+      return '<div style="width:56px;height:56px;flex-shrink:0;"></div>';
+    }
     var bg = activeBg ? 'var(--qs-fallback-toggle-on-bg, #D5D5D5)' : 'var(--qs-fallback-toggle-off-bg, rgba(180,180,180,0.2))';
     return '<div style="position:relative;width:56px;height:56px;border-radius:63.636px;background:' + bg + ';' +
              'display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
@@ -361,6 +370,12 @@
 
   // Multi-layer 56×56 icon (for wifi3, tv-color composites)
   function qsToggleIconMulti(layers, activeBg) {
+    // Avoid 404 spam if wifi3 layers are missing; return a blank container.
+    if (Array.isArray(layers) && layers.some(function (L) {
+      return L && (L.src === 'wifi3-a.svg' || L.src === 'wifi3-b.svg' || L.src === 'wifi3-c.svg' || L.src === 'wifi3-d.svg');
+    })) {
+      return '<div style="width:56px;height:56px;flex-shrink:0;"></div>';
+    }
     var bg = activeBg ? 'var(--qs-fallback-toggle-on-bg, #D5D5D5)' : 'var(--qs-fallback-toggle-off-bg, rgba(180,180,180,0.2))';
     var inner = layers.map(function (L) {
       return qsAbsImg(L.src, L.inset, L.extra || '');

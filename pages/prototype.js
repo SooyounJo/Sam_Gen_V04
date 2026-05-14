@@ -1,15 +1,18 @@
 import Head from "next/head";
 import Script from "next/script";
 import { useEffect, useState } from "react";
-import GlanceCard from "../components/cards/GlanceCard";
 import DotRunningCoach from "../components/cards/DotRunningCoach";
 import PageShell from "../components/layout/PageShell";
-import MlpTile from "../components/prototype/MlpTile";
 import { mlpTiles, prototypeCards } from "../lib/datasets/prototypeData";
 
 export default function PrototypePage() {
   const [viewMode, setViewMode] = useState("normal"); // "normal" | "dot"
   const [activeDot, setActiveDot] = useState(null);
+  const [prompt, setPrompt] = useState("");
+  const [scenario, setScenario] = useState("home"); // "lock" | "home"
+
+  const LOCK_BG = "https://www.figma.com/api/mcp/asset/5f199753-bacf-4a91-acb7-8eb4910dbbe2";
+  const HOME_BG = "https://www.figma.com/api/mcp/asset/fc376bb6-8550-447e-ad03-a9a04a2ff412";
 
   const handleTileClick = (title) => {
     if (viewMode === "normal") {
@@ -20,6 +23,67 @@ export default function PrototypePage() {
       setActiveDot(title);
     }
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Ensure the phone has a base screen on load.
+    let tries = 0;
+    const t = setInterval(() => {
+      tries++;
+      if (typeof window.generateSurfaceScenario === "function") {
+        window.generateSurfaceScenario("tab-root");
+        clearInterval(t);
+      }
+      if (tries > 40) clearInterval(t);
+    }, 80);
+    return () => clearInterval(t);
+  }, []);
+
+  const generateFromPrompt = () => {
+    const v = String(prompt || "").trim();
+    if (!v) return;
+    if (typeof window !== "undefined" && window.pipelineGenerate) {
+      window.pipelineGenerate(v);
+    }
+  };
+
+  const goLock = () => {
+    setScenario("lock");
+    if (typeof window !== "undefined" && typeof window.generateSurfaceScenario === "function") {
+      window.generateSurfaceScenario("lockscreen");
+    }
+  };
+
+  const goHome = () => {
+    setScenario("home");
+    if (typeof window !== "undefined" && typeof window.generateSurfaceScenario === "function") {
+      window.generateSurfaceScenario("tab-root");
+    }
+  };
+
+  const goHealth = () => {
+    setScenario("health");
+    if (typeof window !== "undefined" && typeof window.generateSurfaceScenario === "function") {
+      window.generateSurfaceScenario("health-mlp");
+    }
+  };
+
+  const leftButtons =
+    viewMode === "normal"
+      ? [
+          ...mlpTiles.map((t) => ({ key: "mlp-" + t.id, label: t.title, value: t.title })),
+          ...prototypeCards.map((c, idx) => ({ key: "card-" + idx, label: c.title, value: c.title })),
+        ]
+      : [
+          { key: "dot-running", label: "Running coach", value: "dot-running" },
+          { key: "dot-time-matrix", label: "Time Matrix", value: "dot-time-matrix" },
+          { key: "dot-music-1x1", label: "Music 1x1", value: "dot-music-1x1" },
+          { key: "dot-music-1x2", label: "Music 1x2", value: "dot-music-1x2-actions" },
+          { key: "dot-weather-2x1", label: "Weather 2x1", value: "dot-weather-2x1-v1-1" },
+          { key: "dot-temp-1x1", label: "Temp 1x1", value: "dot-temperature-1x1" },
+          { key: "dot-date-1x1", label: "Date 1x1", value: "dot-date-1x1-v1-1" },
+          { key: "dot-schedule-2x2", label: "Schedule 2x2", value: "dot-schedule-2x2" },
+        ];
 
   return (
     <>
@@ -32,135 +96,105 @@ export default function PrototypePage() {
         description="MLP 결과 및 핵심 glance 카드들을 독립 컴포넌트로 분리하여 관리하는 프로토타입 페이지입니다."
         backHref="/"
       >
-        {/* Toggle Buttons */}
-        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-          <button
-            onClick={() => setViewMode("normal")}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "20px",
-              border: "none",
-              background: viewMode === "normal" ? "#007AFF" : "#E5E5EA",
-              color: viewMode === "normal" ? "#FFF" : "#000",
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            Normal
-          </button>
-          <button
-            onClick={() => setViewMode("dot")}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "20px",
-              border: "none",
-              background: viewMode === "dot" ? "#007AFF" : "#E5E5EA",
-              color: viewMode === "dot" ? "#FFF" : "#000",
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            Dot
-          </button>
-        </div>
+        <div className="mlp-workspace">
+          {/* Left: tiny buttons + generate */}
+          <aside className="mlp-left">
+            <div className="mlp-mode-toggle" role="tablist" aria-label="MLP mode">
+              <button type="button" className={viewMode === "normal" ? "is-active" : ""} onClick={() => setViewMode("normal")}>
+                Normal
+              </button>
+              <button type="button" className={viewMode === "dot" ? "is-active" : ""} onClick={() => setViewMode("dot")}>
+                Dot
+              </button>
+            </div>
 
-        <div style={{ display: "flex", gap: "40px", alignItems: "flex-start", height: "calc(100vh - 180px)", overflowY: "hidden" }}>
-          {viewMode === "normal" ? (
-            <>
-              {/* Left Column: React Components (Normal Mode) */}
-              <div style={{ flex: 1, minWidth: 0, overflowY: "auto", paddingRight: "20px", height: "100%", paddingBottom: "40px" }}>
-                <section className="section-card">
-                  <h2>MLP Gallery</h2>
-                  <p>
-                    기존 갤러리를 별도 컴포넌트로 분리한 상태이니, 이후에는 디자인 실제 프로토타입 화면이나 상세 시나리오에 결합도 가능할 것입니다.
-                  </p>
-                </section>
+            <div className="mlp-btn-list" aria-label="MLP buttons">
+              {leftButtons.map((b) => (
+                <button
+                  key={b.key}
+                  type="button"
+                  className={"mlp-mini-btn" + (viewMode === "dot" && activeDot === b.value ? " is-active" : "")}
+                  onClick={() => handleTileClick(b.value)}
+                >
+                  {b.label}
+                </button>
+              ))}
+            </div>
 
-                <section className="mlp-tile-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "16px", marginBottom: "40px" }}>
-                  {mlpTiles.map((tile) => (
-                    <div key={tile.id} onClick={() => handleTileClick(tile.title)} style={{ cursor: "pointer" }}>
-                      <MlpTile {...tile} />
-                    </div>
-                  ))}
-                </section>
-
-                <section className="section-card">
-                  <h2>Core Glance Cards</h2>
-                  <p>
-                    전체 카드 사진의 느낌을 보여주고, 현재 제품에서 주요한 카드 유형을 최소 구조의 React 컴포넌트로 분리했습니다.
-                  </p>
-                </section>
-
-                <section className="glance-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
-                  {prototypeCards.map((card) => (
-                    <div key={card.eyebrow + card.title} onClick={() => handleTileClick(card.title)} style={{ cursor: "pointer" }}>
-                      <GlanceCard {...card} />
-                    </div>
-                  ))}
-                </section>
+            <div className="mlp-generate">
+              <div className="mlp-generate__title">AI UI Generate</div>
+              <textarea
+                className="mlp-generate__input"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="예) lock screen / notification / quick settings / list / detail ..."
+              />
+              <div className="mlp-generate__row">
+                <button type="button" className="mlp-generate__btn" onClick={generateFromPrompt}>
+                  Generate
+                </button>
               </div>
+            </div>
+          </aside>
 
-              {/* Right Column: Phone Frame (Normal Mode) */}
-              <div style={{ width: "400px", flexShrink: 0, position: "sticky", top: "20px" }}>
-                <div className="canvas-wrap" id="canvasWrap" style={{ background: "transparent", padding: 0, margin: 0, display: "flex", justifyContent: "center" }}>
-                  <div style={{ position: "relative" }}>
-                    <div className="canvas-frame" id="canvasFrame">
-                      <div className="canvas-notch"></div>
-                      <div className="canvas-inner" id="canvas"></div>
-                      {/* Before/After comparison overlay */}
-                      <div className="refine-compare" id="refineCompare">
-                        <button className="refine-close-compare" onClick={() => window.hideRefineComparison && window.hideRefineComparison()}>&times;</button>
-                        <div className="refine-compare-side">
-                          <div className="refine-compare-label before">Before</div>
-                          <div className="refine-compare-canvas" id="refineBeforeCanvas"></div>
-                        </div>
-                        <div className="refine-compare-side">
-                          <div className="refine-compare-label after">After</div>
-                          <div className="refine-compare-canvas" id="refineAfterCanvas"></div>
-                        </div>
-                      </div>
-                    </div>
+          {/* Right: mobile interface focused */}
+          <section className="mlp-right">
+            <div className="mlp-phone-controls">
+              <button type="button" onClick={goLock}>
+                Lock
+              </button>
+              <button type="button" onClick={goHome}>
+                Home
+              </button>
+              <button type="button" onClick={goHealth}>
+                Health
+              </button>
+            </div>
+
+            {viewMode === "normal" ? (
+              <div className="canvas-wrap" id="canvasWrap" style={{ background: "transparent", padding: 0, margin: 0, display: "flex", justifyContent: "center" }}>
+                <div style={{ position: "relative" }}>
+                  <div className="canvas-frame mlp-phone" id="canvasFrame">
+                    <div
+                      className="canvas-inner"
+                      id="canvas"
+                      style={{
+                        backgroundImage: scenario === "health" ? "none" : `url(${scenario === "lock" ? LOCK_BG : HOME_BG})`,
+                        backgroundColor: scenario === "health" ? "#f1f1f3" : "transparent",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    ></div>
                   </div>
                 </div>
                 {/* Hidden output element required by pipelineGenerate */}
                 <div id="pipelineOutput" style={{ display: "none" }}></div>
               </div>
-            </>
-          ) : (
-            <>
-              {/* Left Column: Phone Frame (Dot Mode) */}
-              <div style={{ width: "400px", flexShrink: 0, position: "sticky", top: "20px" }}>
-                <div className="canvas-wrap" style={{ background: "transparent", padding: 0, margin: 0, display: "flex", justifyContent: "center" }}>
-                  <div style={{ position: "relative" }}>
-                    <div className="canvas-frame">
-                      <div className="canvas-notch"></div>
-                      <div className="canvas-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#F2F2F7" }}>
-                        {activeDot === "dot-running" && <DotRunningCoach />}
-                        {!activeDot && <div style={{ color: "#999" }}>우측에서 컴포넌트를 선택해주세요.</div>}
-                      </div>
+            ) : (
+              <div className="canvas-wrap" style={{ background: "transparent", padding: 0, margin: 0, display: "flex", justifyContent: "center" }}>
+                <div style={{ position: "relative" }}>
+                  <div className="canvas-frame mlp-phone">
+                    <div className="canvas-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#F2F2F7", overflow: "hidden" }}>
+                      {activeDot === "dot-running" && <DotRunningCoach />}
+                      {activeDot && activeDot !== "dot-running" && (
+                        <div
+                          id="dot-detail-preview"
+                          style={{ zoom: 0.8 }}
+                          dangerouslySetInnerHTML={{
+                            __html:
+                              typeof window !== "undefined" && typeof window.renderAtomicForRole === "function"
+                                ? window.renderAtomicForRole({ role: activeDot }, { w: 310, h: 165 })
+                                : "",
+                          }}
+                        />
+                      )}
+                      {!activeDot && <div style={{ color: "#999" }}>좌측에서 컴포넌트를 선택해주세요.</div>}
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Right Column: React Components (Dot Mode) */}
-              <div style={{ flex: 1, minWidth: 0, overflowY: "auto", paddingLeft: "20px", height: "100%", paddingBottom: "40px" }}>
-                <section className="section-card">
-                  <h2>Dot Components</h2>
-                  <p>
-                    Dot 에셋을 CSS로 구현한 컴포넌트들입니다. 클릭하여 좌측 모달(디바이스)에서 상세 확인이 가능합니다.
-                  </p>
-                </section>
-
-                <section style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div onClick={() => handleTileClick("dot-running")} style={{ cursor: "pointer", display: "inline-block" }}>
-                    <DotRunningCoach />
-                  </div>
-                  {/* Add more dot components here later */}
-                </section>
-              </div>
-            </>
-          )}
+            )}
+          </section>
         </div>
       </PageShell>
 
@@ -177,7 +211,7 @@ export default function PrototypePage() {
       <Script src="/app/atomics.js" strategy="beforeInteractive" />
       <Script src="/app/design-doc.js" strategy="beforeInteractive" />
       <Script src="/app/interaction-state.js" strategy="beforeInteractive" />
-      <Script src="/app/surface-layout.js" strategy="beforeInteractive" />
+      <Script src="/app/surface-layout.js?v=runpanel-dot-level-1" strategy="beforeInteractive" />
       <Script src="/app/settings.js" strategy="beforeInteractive" />
       <Script src="/app/canvas.js" strategy="beforeInteractive" />
       <Script src="/app/rules-renderer.js" strategy="beforeInteractive" />

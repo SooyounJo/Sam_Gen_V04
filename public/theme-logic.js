@@ -14,130 +14,34 @@ function themeTokenContext() {
 }
 
 // ---------------------------------------------------------------------------
-//  Sample card variants ·what we feed each renderer to produce a preview.
-//  Each entry pairs a friendly label with the (atomic role, variant) tuple
-//  the renderer expects. See app/scenes.js _adaptForBodyAtomic for the
-//  shapes ·we hand-build them here so the customize page is self-contained.
+//  Preview datasets
+//  - Normal: /datasets/normalPreviewCards.js → window.NORMAL_PREVIEW_CARDS
+//  - Dot:    /datasets/dotPreviewCards.js    → window.DOT_PREVIEW_CARDS
+//  Keep them fully separated so "normal" shows only normal, and "dot" only dot.
 // ---------------------------------------------------------------------------
-let PREVIEW_CARDS = [
-  {
-    name: 'Weather',
-    editSections: ['Page', 'Card globals', 'Weather card'],
-    role: 'focus-block',
-    variant: { kind: 'weather', temp: '23°', condition: 'Partly cloudy', location: 'Seoul', feels: '21°', icon: 'cloud-sun' }
-  },
-  {
-    name: 'Calendar',
-    editSections: ['Page', 'Card globals', 'Calendar card'],
-    role: 'focus-block',
-    variant: { kind: 'calendar', section: 'Next up · Today', time: '9:30 AM', duration: '30 min', title: 'Team stand-up', location: 'Studio A' }
-  },
-  {
-    name: 'Reminder',
-    editSections: ['Page', 'Card globals', 'Reminder card'],
-    role: 'focus-block',
-    variant: { kind: 'reminder', task: '5 PM', due: 'Review proposal', count: '3', section: 'TODAY · 3 ITEMS' }
-  },
-  {
-    name: 'Message',
-    editSections: ['Page', 'Card globals', 'Message card'],
-    role: 'focus-block',
-    variant: { kind: 'message', sender: 'Alex', preview: 'see you at coffee shop', section: 'MESSAGES · 2 NEW' }
-  },
-  {
-    name: 'ETA',
-    editSections: ['Page', 'Card globals', 'ETA card'],
-    role: 'focus-block',
-    variant: { kind: 'eta', eta: '12 min', destination: 'Home', traffic: 'Light traffic', route: 'via Hangang-daero' }
-  },
-  {
-    name: 'Input summary',
-    editSections: ['Page', 'Card globals', 'Input summary card'],
-    role: 'focus-block',
-    variant: { kind: 'input', section: 'SEARCH · COFFEE SHOPS', topic: 'Found 12 nearby', detail: '', facets: ['Vegetarian', 'Within 1 km', 'Open now'] }
-  },
-  {
-    name: 'AI notification',
-    editSections: ['Page', 'Card globals', 'AI notification'],
-    role: 'notif-card-ai',
-    variant: { title: 'Galaxy AI', subtitle: 'Your morning summary is ready', body: 'Your morning summary is ready', time: '8:21 AM', glyph: 'A', kind: 'ai' }
-  },
-  {
-    name: 'Notification',
-    editSections: ['Page', 'Card globals'],
-    role: 'notif-card',
-    variant: { title: 'WhatsApp', subtitle: 'Alex: Hey, are you around?', body: 'Alex: Hey, are you around?', time: '5m', glyph: 'W', accent: '#25D366' }
-  },
-  {
-    name: 'Navigation now-bar',
-    editSections: ['Page', 'Card globals', 'Navigation now-bar'],
-    role: 'now-bar',
-    variant: { type: 'navigation', distance: '200 m', direction: 'right', instruction: 'Turn right onto Hangang-daero', eta: '8 min' }
-  },
-  {
-    name: 'Voice (single-line)',
-    editSections: ['Page', 'Card globals', 'Navigation now-bar'],
-    role: 'now-bar',
-    variant: { type: 'single-line', label: 'Listening', listening: true }
-  },
-  {
-    name: 'Charging now-bar',
-    editSections: ['Page', 'Card globals', 'Navigation now-bar'],
-    role: 'now-bar',
-    variant: { type: 'charging', percent: 69 }
-  },
-  {
-    name: 'Action chips',
-    editSections: ['Page', 'Card globals'],
-    role: 'action-row',
-    variant: { actions: [{ label: 'Save', icon: 'bookmark', kind: 'primary' }, { label: 'Share', icon: 'share' }, { label: 'Edit', icon: 'edit' }] }
-  },
-  {
-    name: 'Action chips (gallery demo)',
-    editSections: ['Page', 'Card globals'],
-    role: 'action-row',
-    variant: { previewGallery: true }
-  },
-  {
-    name: 'Quick toggles',
-    editSections: ['Page', 'Card globals'],
-    role: 'toggle-chip',
-    variant: { toggles: [
-      { name: 'Wi-Fi',      icon: 'wifi',       on: true  },
-      { name: 'Bluetooth',  icon: 'bluetooth',  on: true  },
-      { name: 'Flashlight', icon: 'flashlight', on: false },
-      { name: 'Airplane',   icon: 'airplane',   on: false }
-    ] }
-  },
-  {
-    name: 'Now playing bar',
-    editSections: ['Page', 'Card globals', 'Navigation now-bar'],
-    role: 'now-bar',
-    variant: {
-      type: 'media',
-      title: 'Blinding Lights',
-      artist: 'The Weeknd',
-      marquee: 'Blinding Lights · The Weeknd · After Hours'
-    }
-  },
-  {
-    name: 'Media card',
-    editSections: ['Page', 'Card globals'],
-    role: 'media-card',
-    variant: { title: 'After Hours', artist: 'The Weeknd', service: 'Samsung Music' }
-  },
-  {
-    name: 'Progress track',
-    editSections: ['Page', 'Card globals'],
-    role: 'progress-track',
-    variant: { left: '1:42', right: '2:18', percent: 40 }
-  }
-];
+let PREVIEW_CARDS = [];
+let PREVIEW_CARDS_NORMAL = [];
+let PREVIEW_CARDS_DOT = [];
 
-const PREVIEW_CARDS_NORMAL = JSON.parse(JSON.stringify(PREVIEW_CARDS));
-let PREVIEW_CARDS_DOT = JSON.parse(JSON.stringify(PREVIEW_CARDS));
+function _cloneCards(cards) {
+  try { return JSON.parse(JSON.stringify(cards || [])); }
+  catch (_) { return Array.isArray(cards) ? cards.slice() : []; }
+}
+
+function setPreviewDataset(kind) {
+  const k = (kind === 'dot') ? 'dot' : 'normal';
+  PREVIEW_CARDS = (k === 'dot') ? PREVIEW_CARDS_DOT : PREVIEW_CARDS_NORMAL;
+  renderPreviewGrid();
+  showToast(k === 'dot' ? 'Switched to dot data' : 'Switched to normal data');
+}
 
 const TOOLKIT_PREVIEW_SCALE = 0.72;
+
+function shouldUseZoomPreviewForRole(role) {
+  // Dot-matrix cards look blurry when downscaled via transform.
+  // Using `zoom` keeps the same visual size but typically preserves dot-font crispness.
+  return role === 'run-panel' || (typeof role === 'string' && role.indexOf('dot-') === 0);
+}
 
 function previewRectForCard(card) {
   const role = card && card.role;
@@ -154,6 +58,28 @@ function previewRectForCard(card) {
   if (role === 'action-row') return { w: 408, h: 96, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'media-card') return { w: 360, h: 200, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'progress-track') return { w: 360, h: 52, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'run-panel') return { w: 165.38, h: 165.38, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-running') return { w: 297, h: 75, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-running-compact') return { w: 164, h: 82, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-goal') return { w: 340, h: 168, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-call') return { w: 343, h: 75, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-gallery-img') return { w: 168, h: 168, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-gallery-frame1') return { w: 168, h: 168, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-gallery-frame3') return { w: 162, h: 218, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-camera') return { w: 164, h: 246, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-music-1x1') return { w: 168, h: 168, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-music-1x2-actions') return { w: 340, h: 168, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-music-1x2-icon') return { w: 340, h: 168, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-clock-2x1') return { w: 168, h: 64, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-time-matrix') return { w: 340, h: 180, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-schedule-2x2') return { w: 168, h: 168, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-schedule-4x2') return { w: 340, h: 168, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-total-steps-2x1') return { w: 168, h: 82, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-temperature-1x1') return { w: 82, h: 82, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-weather-1x1') return { w: 82, h: 82, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-date-1x1-v1-1') return { w: 82, h: 82, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-date-1x1-v1-2') return { w: 82, h: 82, scale: TOOLKIT_PREVIEW_SCALE };
+  if (role === 'dot-weather-2x1-v1-1') return { w: 168, h: 82, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'focus-block' && variant.kind === 'weather') return { w: 415, h: 218, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'focus-block' && variant.kind === 'calendar') return { w: 300, h: 128, scale: TOOLKIT_PREVIEW_SCALE };
   if (role === 'focus-block' && variant.kind === 'input') return { w: 300, h: 168, scale: TOOLKIT_PREVIEW_SCALE };
@@ -1270,6 +1196,7 @@ function renderPreviewGrid() {
     stage.className = 'stage';
     const previewRect = rect;
     const previewScale = previewRect.scale || 1;
+    const useZoomPreview = shouldUseZoomPreviewForRole(card && card.role);
     let html = '';
     try {
       const comp = { role: card.role, variant: card.variant, content: card.content || {} };
@@ -1281,16 +1208,22 @@ function renderPreviewGrid() {
     } catch (e) {
       html = '<div style="padding:20px;color:var(--warning);">render error: ' + e.message + '</div>';
     }
+    var scaleStyle = useZoomPreview
+      ? ('zoom:' + previewScale + ';transform:none;')
+      : ('transform:scale(' + previewScale + ');');
     stage.innerHTML =
       '<div class="stage-scale" style="width:' + previewRect.w + 'px;' +
       'min-height:' + previewRect.h + 'px;height:auto;' +
-      'transform:scale(' + previewScale + ');">' + html + '</div>';
+      scaleStyle + '">' + html + '</div>';
     const scaleRoot = stage.firstElementChild;
     const cardRoot = scaleRoot && scaleRoot.firstElementChild;
     if (cardRoot) {
       cardRoot.style.width = previewRect.w + 'px';
       cardRoot.style.minHeight = previewRect.h + 'px';
-      cardRoot.style.height = 'auto';
+      // Dot cards rely heavily on absolute positioning (fixed-size layouts).
+      // Forcing height:auto in the preview causes contents to collapse/squish.
+      if (useZoomPreview) cardRoot.style.height = previewRect.h + 'px';
+      else cardRoot.style.height = 'auto';
       cardRoot.style.maxWidth = 'none';
       cardRoot.style.flex = 'none';
     }
@@ -1298,15 +1231,21 @@ function renderPreviewGrid() {
     normalizeFlatTextForScheme(stage);
     if (scaleRoot) {
       void scaleRoot.offsetHeight;
-      var crH = 0;
-      if (cardRoot && typeof cardRoot.getBoundingClientRect === 'function') {
-        crH = Math.ceil(cardRoot.getBoundingClientRect().height);
+      if (useZoomPreview) {
+        // Dot cards are fixed-size: avoid measuring zoomed layout and double-scaling.
+        stage.style.width = Math.ceil(previewRect.w * previewScale) + 'px';
+        stage.style.height = Math.ceil(previewRect.h * previewScale) + 'px';
+      } else {
+        var crH = 0;
+        if (cardRoot && typeof cardRoot.getBoundingClientRect === 'function') {
+          crH = Math.ceil(cardRoot.getBoundingClientRect().height);
+        }
+        var logicalH = Math.max(previewRect.h, scaleRoot.scrollHeight, crH) + 12;
+        var scaledH = Math.ceil(logicalH * previewScale);
+        var scaledW = Math.ceil(previewRect.w * previewScale);
+        stage.style.width = scaledW + 'px';
+        stage.style.height = scaledH + 'px';
       }
-      var logicalH = Math.max(previewRect.h, scaleRoot.scrollHeight, crH) + 12;
-      var scaledH = Math.ceil(logicalH * previewScale);
-      var scaledW = Math.ceil(previewRect.w * previewScale);
-      stage.style.width = scaledW + 'px';
-      stage.style.height = scaledH + 'px';
     } else {
       stage.style.width = Math.ceil(previewRect.w * previewScale) + 'px';
       stage.style.height = Math.ceil(previewRect.h * previewScale) + 'px';
@@ -2410,15 +2349,11 @@ async function importHTMLFile(file) { return importThemeFiles(file ? [file] : []
   if (!btnNormal || !btnDot) return;
 
   btnNormal.addEventListener('click', () => {
-    PREVIEW_CARDS = PREVIEW_CARDS_NORMAL;
-    renderPreviewGrid();
-    showToast('Switched to normal data');
+    setPreviewDataset('normal');
   });
 
   btnDot.addEventListener('click', () => {
-    PREVIEW_CARDS = PREVIEW_CARDS_DOT;
-    renderPreviewGrid();
-    showToast('Switched to dot data');
+    setPreviewDataset('dot');
   });
 })();
 
@@ -2441,6 +2376,15 @@ async function boot() {
     ).join('');
     sel.value = ACTIVE_ID;
     updateOnSelect(ACTIVE_ID, false);
+    // Load datasets (no merge).
+    PREVIEW_CARDS_NORMAL = (Array.isArray(window.NORMAL_PREVIEW_CARDS) && window.NORMAL_PREVIEW_CARDS.length)
+      ? _cloneCards(window.NORMAL_PREVIEW_CARDS)
+      : [];
+    PREVIEW_CARDS_DOT = (Array.isArray(window.DOT_PREVIEW_CARDS) && window.DOT_PREVIEW_CARDS.length)
+      ? _cloneCards(window.DOT_PREVIEW_CARDS)
+      : [];
+    // Default view: dot if available, else normal.
+    PREVIEW_CARDS = (PREVIEW_CARDS_DOT.length ? PREVIEW_CARDS_DOT : PREVIEW_CARDS_NORMAL);
     // Wait for renderer to be ready (the script tag is async-ish; if not
     // ready yet, retry once on next tick).
     if (typeof window.renderAtomicForRole === 'function') {
@@ -2575,15 +2519,122 @@ document.getElementById('preview-bg-swatches')?.addEventListener('click', functi
   if (!grid || grid.__delegatesBound) return;
   grid.__delegatesBound = true;
   function applyPreviewSelection(idx) {
-    INSPECTOR_LAYER = null;
-    INSPECTOR_DOM_PATH = null;
-    if (SELECTED_PREVIEW_INDEX === idx) SELECTED_PREVIEW_INDEX = null;
-    else SELECTED_PREVIEW_INDEX = idx;
-    if (SELECTED_PREVIEW_INDEX === null) PREVIEW_CELL_VAR_OVERRIDES = {};
+    SELECTED_PREVIEW_INDEX = idx;
+    updateDetailView(idx);
     renderPreviewGrid();
-    buildEditorBody();
-    updateEditorScopeUI();
   }
+
+  function updateDetailView(idx) {
+    const detail = $('detail-view');
+    const stage = $('detail-stage');
+    const controls = $('detail-controls');
+
+    if (!detail || !stage) return;
+
+    const card = PREVIEW_CARDS[idx];
+    if (!card) return;
+
+    // Render component into detail stage
+    const rect = previewRectForCard(card);
+    const html = window.renderAtomicForRole(card, rect);
+    stage.innerHTML = html;
+    
+    // Reset state to idle
+    const cardEl = stage.querySelector('.dot-card, .focus-block, .notif-card, .now-bar, .media-card, .progress-track');
+    if (cardEl) cardEl.setAttribute('data-state', 'idle');
+
+    // Detail controls: dot-time-matrix time scrubber
+    if (controls) {
+      controls.innerHTML = '';
+      controls.style.display = 'none';
+    }
+
+    if (card && card.role === 'dot-time-matrix' && controls && typeof window.renderAtomicForRole === 'function') {
+      controls.style.display = 'flex';
+
+      var wrap = document.createElement('div');
+      wrap.className = 'timemat-controls';
+      wrap.style.display = 'flex';
+      wrap.style.flexDirection = 'column';
+      wrap.style.gap = '10px';
+      wrap.style.minWidth = '320px';
+
+      var title = document.createElement('div');
+      title.textContent = 'Time scrubber';
+      title.style.color = 'rgba(255,255,255,0.72)';
+      title.style.fontSize = '12px';
+      title.style.fontWeight = '600';
+      title.style.letterSpacing = '0.06em';
+      title.style.textTransform = 'uppercase';
+
+      var row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.gap = '12px';
+
+      var range = document.createElement('input');
+      range.type = 'range';
+      range.min = '0';
+      range.max = String(24 * 60 - 1);
+      range.step = '1';
+      range.value = String((new Date()).getHours() * 60 + (new Date()).getMinutes());
+      range.style.flex = '1';
+
+      var label = document.createElement('div');
+      label.style.minWidth = '84px';
+      label.style.textAlign = 'right';
+      label.style.color = '#fff';
+      label.style.fontSize = '13px';
+      label.style.fontWeight = '700';
+
+      function pad2(n) { return String(n).padStart(2, '0'); }
+      function timeTextFromMinutes(total) {
+        var h24 = Math.floor(total / 60);
+        var m = total % 60;
+        var isAM = h24 < 12;
+        var h12 = h24 % 12;
+        if (h12 === 0) h12 = 12;
+        return { hh: pad2(h12), mm: pad2(m), period: isAM ? 'AM' : 'PM' };
+      }
+
+      // Crossfade between two renders for "animation" feel.
+      var pendingRAF = 0;
+      function updateTime() {
+        var mins = parseInt(range.value, 10) || 0;
+        var t = timeTextFromMinutes(mins);
+        label.textContent = t.hh + ':' + t.mm + ' ' + t.period;
+
+        // Re-render stage with updated variant values.
+        var next = {
+          role: 'dot-time-matrix',
+          variant: Object.assign({}, (card && card.variant) || {}, {
+            time: t.hh + ':' + t.mm,
+            meta: t.period + ' ' + (['SUN','MON','TUE','WED','THU','FRI','SAT'][(new Date()).getDay()]),
+          })
+        };
+        var nextHtml = window.renderAtomicForRole(next, rect);
+
+        // lightweight crossfade
+        stage.style.transition = 'opacity 140ms ease';
+        stage.style.opacity = '0.0';
+        if (pendingRAF) cancelAnimationFrame(pendingRAF);
+        pendingRAF = requestAnimationFrame(function () {
+          stage.innerHTML = nextHtml;
+          stage.style.opacity = '1';
+        });
+      }
+
+      range.addEventListener('input', updateTime);
+      updateTime();
+
+      row.appendChild(range);
+      row.appendChild(label);
+      wrap.appendChild(title);
+      wrap.appendChild(row);
+      controls.appendChild(wrap);
+    }
+  }
+
   grid.addEventListener('click', function (e) {
     if (e.detail !== 1) return;
     var cell = e.target.closest('.preview-cell');

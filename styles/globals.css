@@ -5,6 +5,15 @@
   --text: #f3f7fb;
   --text-muted: rgba(243, 247, 251, 0.72);
   --accent: #64e9e3;
+  --font-dot: "Ndot55", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+@font-face {
+  font-family: "Ndot55";
+  src: url("/fonts/Ndot%2055.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
 * {
@@ -773,6 +782,189 @@ a {
   height: 12px;
   border-radius: 999px;
   flex-shrink: 0;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   MLP Prototype layout (right = phone, left = mini buttons + generate)
+   ────────────────────────────────────────────────────────────────────── */
+.mlp-workspace {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  min-height: calc(100vh - 180px);
+}
+
+.mlp-left {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.mlp-mode-toggle {
+  display: flex;
+  gap: 10px;
+}
+
+.mlp-mode-toggle button {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.mlp-mode-toggle button.is-active {
+  border-color: rgba(100, 233, 227, 0.55);
+  background: rgba(100, 233, 227, 0.16);
+}
+
+.mlp-btn-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  max-height: min(52vh, 520px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.mlp-mini-btn {
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mlp-mini-btn:hover {
+  border-color: rgba(100, 233, 227, 0.55);
+}
+
+.mlp-mini-btn.is-active {
+  border-color: rgba(100, 233, 227, 0.8);
+  background: rgba(100, 233, 227, 0.14);
+}
+
+.mlp-generate {
+  border-radius: 24px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mlp-generate__title {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(100, 233, 227, 0.95);
+  font-weight: 700;
+}
+
+.mlp-generate__input {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--text);
+  outline: none;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.mlp-generate__input:focus {
+  border-color: rgba(100, 233, 227, 0.7);
+}
+
+.mlp-generate__row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mlp-generate__btn {
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(100, 233, 227, 0.55);
+  background: rgba(100, 233, 227, 0.18);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mlp-generate__btn:hover {
+  background: rgba(100, 233, 227, 0.25);
+}
+
+.mlp-right {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.mlp-phone-controls {
+  width: 400px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.mlp-phone-controls button {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* Hide top system bar/home chrome on the MLP phone only */
+.mlp-phone .canvas-item[data-role="status-bar"],
+.mlp-phone .surface-item[data-role="status-bar"],
+.mlp-phone [data-role="status-bar"] {
+  display: none !important;
+}
+
+/* Remove the reserved top chrome inset on MLP phone only */
+.mlp-phone .canvas-inner {
+  padding-top: 0 !important;
+}
+
+@media (max-width: 900px) {
+  .mlp-workspace {
+    grid-template-columns: 1fr;
+  }
+  .mlp-left {
+    position: static;
+  }
+  .mlp-phone-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 768px) {
