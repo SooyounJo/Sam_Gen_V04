@@ -169,12 +169,12 @@
       editSections: ['Page', 'Card globals'],
       role: 'dot-schedule-2x2',
       variant: {
-        date: 'May 15',
+        date: '13 May',
         items: [
-          { text: 'Design standup', tone: 'muted' },
-          { text: 'Coffee w/ Sarah', tone: 'muted' },
-          { text: 'Run 5km', tone: 'accent' },
-          { text: 'Dinner reservation', tone: 'strong' }
+          { text: 'Wild Life', tone: 'muted' },
+          { text: 'Blue Mountains', tone: 'muted' },
+          { text: 'Darling Harbour', tone: 'accent' },
+          { text: 'Opera House', tone: 'muted' }
         ]
       }
     },

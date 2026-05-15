@@ -230,36 +230,79 @@
     .dot-running__icon-svg .dot-runner-frame--c { opacity: 0 !important; }
   }
 
-  /* Running coach runner animation (CSS, not SMIL) */
-  .dot-running__icon-svg .dot-runner-frame--a {
-    animation: dotRunnerA 900ms steps(1, end) infinite;
+  /* Running coach runner animation (CSS) */
+  .dot-runner-frame {
+    display: block !important;
+    opacity: 0;
   }
-  .dot-running__icon-svg .dot-runner-frame--b {
-    animation: dotRunnerB 900ms steps(1, end) infinite;
+  .dot-runner-frame circle {
+    fill: #FFFFFF !important;
+    opacity: 1 !important;
   }
-  .dot-running__icon-svg .dot-runner-frame--c {
-    animation: dotRunnerC 900ms steps(1, end) infinite;
+  .dot-runner-frame--a { animation: dotRunnerSeq4 800ms steps(1) infinite !important; }
+  .dot-runner-frame--b { animation: dotRunnerSeq4 800ms steps(1) infinite -200ms !important; }
+  .dot-runner-frame--c { animation: dotRunnerSeq4 800ms steps(1) infinite -400ms !important; }
+  .dot-runner-frame--d { animation: dotRunnerSeq4 800ms steps(1) infinite -600ms !important; }
+
+  @keyframes dotRunnerSeq4 {
+    0%, 24.9% { opacity: 1; }
+    25%, 100% { opacity: 0; }
   }
-  /* 3-frame discrete loop: A → B → C */
-  @keyframes dotRunnerA { 0%,33.333% { opacity: 1; } 33.334%,100% { opacity: 0; } }
-  @keyframes dotRunnerB { 0%,33.333% { opacity: 0; } 33.334%,66.666% { opacity: 1; } 66.667%,100% { opacity: 0; } }
-  @keyframes dotRunnerC { 0%,66.666% { opacity: 0; } 66.667%,100% { opacity: 1; } }
 
   /* Running coach arrow: sequential dot reveal via delays */
-  .dot-running__dots-arrow svg .dot-run-arrow-dot {
-    animation: dotRunArrowReveal 1.6s steps(1, end) infinite;
+  .dot-run-arrow-dot {
+    opacity: 0;
   }
-  @keyframes dotRunArrowReveal { 0% { opacity: 0; } 0.1%,100% { opacity: 1; } }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--0 { animation-delay: 0s; }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--1 { animation-delay: 0.06s; }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--2 { animation-delay: 0.12s; }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--3 { animation-delay: 0.18s; }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--4 { animation-delay: 0.24s; }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--5 { animation-delay: 0.30s; }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--6 { animation-delay: 0.36s; }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--7 { animation-delay: 0.42s; }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--8 { animation-delay: 0.48s; }
-  .dot-running__dots-arrow svg .dot-run-arrow-dot--9 { animation-delay: 0.54s; }
+  .dot-running__dots-arrow svg .dot-run-arrow-dot {
+    animation: dotRunArrowReveal 1.6s steps(1) infinite !important;
+  }
+  @keyframes dotRunArrowReveal { 
+    0%, 10% { opacity: 0; } 
+    11%, 100% { opacity: 1; } 
+  }
+  .dot-run-arrow-dot--0 { animation-delay: 0s !important; }
+  .dot-run-arrow-dot--1 { animation-delay: 0.1s !important; }
+  .dot-run-arrow-dot--2 { animation-delay: 0.2s !important; }
+  .dot-run-arrow-dot--3 { animation-delay: 0.3s !important; }
+  .dot-run-arrow-dot--4 { animation-delay: 0.4s !important; }
+  .dot-run-arrow-dot--5 { animation-delay: 0.5s !important; }
+  .dot-run-arrow-dot--6 { animation-delay: 0.6s !important; }
+  .dot-run-arrow-dot--7 { animation-delay: 0.7s !important; }
+  .dot-run-arrow-dot--8 { animation-delay: 0.8s !important; }
+  .dot-run-arrow-dot--9 { animation-delay: 0.9s !important; }
+
+  /* Run Panel (165.38횞165.38) */
+  .run-panel {
+    width: 165.38px;
+    height: 165.38px;
+    background: #1F1F1F;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .run-panel__svg {
+    width: 100%;
+    height: 100%;
+  }
+  /* Group-level frame loop: more efficient than dot-level */
+  .run-frame {
+    display: block !important;
+    opacity: 0;
+  }
+  /* Target individual dots for maximum reliability across browsers */
+  .run-dot {
+    fill: #FF7F24 !important;
+    opacity: 1 !important;
+  }
+  .run-frame.f1 { animation: runFrameSeq 450ms steps(1) infinite !important; }
+  .run-frame.f2 { animation: runFrameSeq 450ms steps(1) infinite -150ms !important; }
+  .run-frame.f3 { animation: runFrameSeq 450ms steps(1) infinite -300ms !important; }
+
+  @keyframes runFrameSeq {
+    0%, 33.2% { opacity: 1; }
+    33.33%, 100% { opacity: 0; }
+  }
 
   /* Dot Running compact (164×82) */
   .dot-running2 {
@@ -316,6 +359,9 @@
     border-radius: 32px;
     color: #FFFFFF;
     overflow: hidden;
+  }
+  .dot-music.is-orange {
+    background: #FF7F24;
   }
 
   /* music 1×1 (168×168) */
@@ -557,8 +603,8 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 29.56px;
-    height: 29.26px;
+    width: 32px;
+    height: 32px;
   }
   .dot-music3__title {
     width: 200px;
@@ -635,6 +681,7 @@
     justify-content: center;
     color: #FFFFFF;
     white-space: nowrap;
+    margin-top: 4px; /* Visually center offset */
   }
   .dot-clock21__period {
     width: 21px;
@@ -650,6 +697,7 @@
     align-items: center;
     color: #FFFFFF;
     white-space: nowrap;
+    margin-top: 4px; /* Visually center offset */
   }
 
   /* Dot time matrix (active dots clock) */
@@ -833,7 +881,7 @@
     width: 82px;
     height: 82px;
     position: relative;
-    background: rgba(255, 255, 255, 0.2);
+    background: #FF7F24;
     border-radius: 101.68px;
     overflow: hidden;
     color: #FFFFFF;
@@ -985,39 +1033,19 @@
 
   /* Run Panel Animation */
   .run-panel {
-    width: 168px;
-    height: 168px;
-    position: relative;
-    background: #111;
-    border-radius: 32px;
-    overflow: hidden;
-  }
-  /* New run panel spec: 165.38×165.38, dot 5.65, step 10.65, bg #303030, runner #FF7F24 */
-  .run-panel {
     width: 165.38px;
     height: 165.38px;
-    /* Match reference: darker panel behind the dot grid */
     background: #1F1F1F;
     border-radius: 32px;
     overflow: hidden;
+    position: relative;
   }
-  .run-panel__svg {
-    display: block;
-    width: 165.38px;
-    height: 165.38px;
-  }
-  .run-frame {
-    opacity: 0;
-  }
-  /* Dot-level frame loop (Time Matrix style): keep grid stable, only orange dots switch */
-  .run-frame { opacity: 1; }
-  .run-dot { opacity: 0; }
-  .run-dot--f1 { animation: runDotF1 300ms steps(1, end) infinite; }
-  .run-dot--f2 { animation: runDotF2 300ms steps(1, end) infinite; }
-  .run-dot--f3 { animation: runDotF3 300ms steps(1, end) infinite; }
-  @keyframes runDotF1 { 0%,33.333% { opacity: 1; } 33.334%,100% { opacity: 0; } }
-  @keyframes runDotF2 { 0%,33.333% { opacity: 0; } 33.334%,66.666% { opacity: 1; } 66.667%,100% { opacity: 0; } }
-  @keyframes runDotF3 { 0%,66.666% { opacity: 0; } 66.667%,100% { opacity: 1; } }
+  /* Redundant run-panel rules removed */
+
+
+
+
+
 
 /* Lock Screen Widgets */
 .lock-widgets-container {
@@ -1079,10 +1107,7 @@
   margin: 0 auto;
 }
 
-/* Reduced motion guard for Run Panel (Step C) */
-@media (prefers-reduced-motion: reduce) {
-  .run-panel__svg .run-dot { opacity: 1 !important; animation: none !important; }
-}
+  /* Reduced motion guard for Run Panel removed to prevent overrides */
 
   /* Goal (dot) · Productivity_Goal_2*4 (340×168) */
   .dot-goal {

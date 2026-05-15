@@ -301,10 +301,9 @@ window.composeSurfacePlan = function composeSurfacePlan(surfaceType, layout) {
           { id: 'home-top-widgets', role: 'home-top-widgets', zone: 'viewing' },
           { id: 'home-time-matrix', role: 'dot-time-matrix', zone: 'viewing' },
           { id: 'home-mid-widgets', role: 'home-mid-widgets', zone: 'viewing' },
-          { id: 'home-music-card',  role: 'dot-music-1x2-actions', zone: 'interaction' },
           { id: 'app-dock',   role: 'app-dock',   zone: 'bottomNav',
-            content: { apps: ['Camera','Gallery','Blank','YT Music'] } },
-          { id: 'nav-bar', role: 'navigation-bar', zone: 'bottomAction' }
+            content: { apps: ['Camera','Gallery','Maps','YT Music'] } },
+          { id: 'gesture-bar', role: 'gestureBar', zone: 'bottomAction' }
         ]
       };
 
@@ -361,15 +360,15 @@ window.composeSurfacePlan = function composeSurfacePlan(surfaceType, layout) {
       return {
         surfaceType,
         components: [
-          { id: 'status-bar', role: 'status-bar', zone: 'topSystem' },
+          { id: 'status-bar', role: 'status-bar', zone: 'topSystem', variant: { theme: 'light', carrier: 'TJG' } },
           { id: 'health-header', role: 'health-header', zone: 'viewing' },
           { id: 'health-brief', role: 'health-brief', zone: 'viewing' },
           { id: 'health-goal-card', role: 'health-goal-card', zone: 'viewing' },
           { id: 'health-course-card', role: 'health-course-card', zone: 'viewing' },
           { id: 'health-weather-card', role: 'health-weather-card', zone: 'viewing' },
           { id: 'health-jogging-card', role: 'health-jogging-card', zone: 'viewing' },
-          { id: 'health-music-card', role: 'health-music-card', zone: 'interaction' },
-          { id: 'nav-bar', role: 'navigation-bar', zone: 'bottomAction' }
+          { id: 'health-music-card', role: 'health-music-card', zone: 'viewing' },
+          { id: 'gesture-bar', role: 'gestureBar', zone: 'bottomAction' }
         ]
       };
 
@@ -955,7 +954,7 @@ window.resolveComponentRect = function resolveComponentRect(comp, layout, plan) 
     case 'home-mid-widgets':
       return {
         x: 24,
-        y: 398,
+        y: 418,
         w: vw - 48,
         h: 168
       };
@@ -971,7 +970,7 @@ window.resolveComponentRect = function resolveComponentRect(comp, layout, plan) 
     case 'dot-music-1x2-actions':
       return {
         x: 22,
-        y: 574,
+        y: 594,
         w: vw - 44,
         h: 165
       };
@@ -993,19 +992,98 @@ window.resolveComponentRect = function resolveComponentRect(comp, layout, plan) 
       };
 
     case 'health-header':
-      return { x: 25, y: 105, w: vw - 50, h: 32 };
+      return { x: 25, y: 80, w: vw - 50, h: 40 };
     case 'health-brief':
-      return { x: 25, y: 153, w: vw - 50, h: 48 };
+      return { x: 25, y: 130, w: vw - 50, h: 60 };
     case 'health-goal-card':
-      return { x: 25, y: 220, w: 355, h: 96 };
+      return { x: 25, y: 210, w: 401, h: 110 };
     case 'health-course-card':
-      return { x: 25, y: 338, w: 171, h: 172 };
+      return { x: 25, y: 338, w: 193, h: 193 };
     case 'health-weather-card':
-      return { x: 207, y: 338, w: 173, h: 78 };
+      return { x: 233, y: 338, w: 193, h: 78 };
     case 'health-jogging-card':
-      return { x: 207, y: 431, w: 173, h: 78 };
+      return { x: 233, y: 431, w: 193, h: 100 };
     case 'health-music-card':
-      return { x: 24, y: 532, w: 356, h: 159 };
+      return { x: 25, y: 550, w: 401, h: 180 };
+    case 'health-header':
+      return { x: 25, y: 80, w: vw - 50, h: 40 };
+    case 'health-brief':
+      return { x: 25, y: 130, w: vw - 50, h: 60 };
+    case 'health-goal-card':
+      return { x: 25, y: 210, w: 401, h: 110 };
+    case 'health-course-card':
+      return { x: 25, y: 338, w: 193, h: 193 };
+    case 'health-weather-card':
+      return { x: 233, y: 338, w: 193, h: 78 };
+    case 'health-jogging-card':
+      return { x: 233, y: 431, w: 193, h: 100 };
+    case 'health-weather-card':
+      return '<div class="health-weather-card" style="width:100%;height:100%;background:#FF7F24;border-radius:39px;padding:16px 24px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;color:#000;">' +
+        window.renderAtomicForRole({ role: 'dot-weather-2x1-v1-1', variant: { location: 'Sydney', condition: 'sunny', dotColor: '#000' } }, { w: 40, h: 40 }) +
+        '<div style="text-align:right;">' +
+          '<div style="font-family:var(--font);font-weight:600;font-size:16px;">Sydney</div>' +
+          '<div style="font-family:var(--font);font-weight:500;font-size:14px;opacity:0.8;">Sunny</div>' +
+        '</div>' +
+      '</div>';
+    case 'health-jogging-card':
+      return '<div class="health-jogging-card" style="width:100%;height:100%;background:#1A1D1C;border-radius:50px;padding:16px 24px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;color:#fff;">' +
+        window.renderAtomicForRole({ role: 'dot-running', variant: { state: 'idle', scale: 0.5 } }, { w: 40, h: 40 }) +
+        '<div style="text-align:right;">' +
+          '<div style="font-family:var(--font);font-weight:600;font-size:16px;color:#FF7F24;">조깅</div>' +
+          '<div style="font-family:var(--font);font-weight:500;font-size:14px;color:#FF7F24;">10:35</div>' +
+        '</div>' +
+      '</div>';
+    case 'health-music-card':
+      return '<div class="health-music-card" style="width:100%;height:100%;background:#1A1D1C;border-radius:24px;padding:20px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;color:#fff;position:relative;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+          '<div style="display:flex;gap:16px;align-items:center;">' +
+            '<div style="width:64px;height:64px;background:#3B393E;border-radius:20px;display:flex;align-items:center;justify-content:center;">' +
+              '<svg class="dot-music3__noteSvg" width="32" height="32" viewBox="-2 -2 68 68" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+                '<circle cx="27.98" cy="3.49" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="35.66" cy="3.49" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="44.25" cy="3.49" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="52.39" cy="3.49" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="60.52" cy="3.49" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="19.85" cy="3.49" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="27.98" cy="11.62" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="44.25" cy="11.62" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="60.52" cy="11.62" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="19.85" cy="11.62" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="35.66" cy="11.62" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="52.39" cy="11.62" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="27.98" cy="19.76" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="44.25" cy="19.76" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="60.52" cy="19.76" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="19.85" cy="19.76" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="35.66" cy="19.76" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="52.39" cy="19.76" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="19.85" cy="28.80" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="60.52" cy="28.80" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="19.85" cy="36.94" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="60.52" cy="36.94" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="19.85" cy="45.18" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="60.52" cy="45.18" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="11.62" cy="53.32" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="3.49"  cy="53.32" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="52.39" cy="53.32" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="19.85" cy="53.32" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="60.52" cy="53.32" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="11.62" cy="61.45" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="3.49"  cy="61.45" r="3.5" fill="#FFFFFF"/>' +
+                '<circle cx="52.39" cy="61.45" r="3.5" fill="#FFFFFF"/>' +
+              '</svg>' +
+            '</div>' +
+            '<div style="font-family:var(--font);font-weight:600;font-size:16px;line-height:1.3;">오늘 날씨에 딱 맞는<br/>플레이리스트</div>' +
+          '</div>' +
+          '<svg width="24" height="24" viewBox="0 0 24 24" fill="#fff" style="opacity:0.9;"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.485 17.303c-.215.354-.674.466-1.028.251-2.858-1.747-6.457-2.141-10.694-1.173-.406.092-.813-.162-.905-.568-.092-.406.162-.813.568-.905 4.632-1.059 8.604-.604 11.808 1.354.354.215.466.674.251 1.028zm1.465-3.262c-.271.441-.849.584-1.29.313-3.271-2.011-8.258-2.593-12.126-1.418-.497.151-1.025-.129-1.176-.626-.151-.497.129-1.025.626-1.176 4.418-1.34 9.907-.689 13.653 1.627.441.271.584.849.313 1.29zm.127-3.398c-3.923-2.33-10.392-2.546-14.162-1.401-.602.183-1.24-.158-1.423-.76-.183-.602.158-1.24.76-1.423 4.316-1.311 11.458-1.054 15.96 1.619.541.321.718 1.02.397 1.561-.321.541-1.02.718-1.561.397z"/></svg>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:12px;margin-top:12px;">' +
+          '<div style="font-family:Roboto;font-weight:400;font-size:14px;color:rgba(255,255,255,0.6);">Jim Hall - Concierto</div>' +
+          '<div style="height:2px;background:rgba(255,255,255,0.1);position:relative;border-radius:1px;">' +
+            '<div style="position:absolute;left:0;top:0;bottom:0;width:30%;background:#fff;border-radius:1px;"></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
 
     case 'unlock-hint':
       return {
@@ -3226,48 +3304,25 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
         return s;
       }
 
-      // Default frame (state2) from earlier extraction.
-      var f2 = [
-        [9,4],[10,4],
-        [6,5],[7,5],[9,5],[10,5],
-        [5,6],[7,6],[8,6],
-        [7,7],[8,7],[9,7],[11,7],
-        [6,8],[7,8],[9,8],[10,8],
-        [5,9],[6,9],[7,9],
-        [5,10],[6,10],[7,10],[8,10],
-        [5,11],[6,11],[8,11],[9,11],
-        [3,12],[4,12],[5,12],[7,12],[8,12],
-        [2,13],[3,13],[6,13],[7,13]
-      ];
+      // Use specific coordinates provided by the user for 3-frame running animation.
+      // Offset applied to center the 11x10 character in the 16x16 grid.
+      var offX = 3;
+      var offY = 3;
 
-      // If explicit frames are provided (from Figma), prefer them.
-      // Otherwise derive f1/f3 from f2 so motion is visible.
-      var frames = Array.isArray(rpv.frames) ? rpv.frames : null;
-      function _deriveFrame(mode) {
-        // mode: -1 (pre), +1 (post)
-        var out = [];
-        for (var i = 0; i < f2.length; i++) {
-          var x = f2[i][0];
-          var y = f2[i][1];
-          // Keep head/torso stable.
-          if (y >= 11) {
-            // Legs swing.
-            x += mode;
-            if (y === 13) y = 12;
-          } else if (y >= 8 && y <= 10) {
-            // Arms/torso micro shift.
-            if (x >= 8) x += mode;
-          }
-          out.push([x, y]);
-        }
-        // Add a couple extra dots to accentuate movement.
-        if (mode < 0) out.push([8, 12], [9, 11]);
-        else out.push([4, 12], [5, 11]);
-        return out;
+      // Frame 1 (Group 2085670779)
+      var f1_raw = [[8,0],[9,0],[4,1],[5,1],[8,1],[9,1],[3,2],[5,2],[6,2],[7,2],[5,3],[6,3],[7,3],[8,3],[10,3],[4,4],[5,4],[6,4],[8,4],[9,4],[3,5],[4,5],[5,5],[3,6],[4,6],[6,6],[7,6],[3,7],[4,7],[7,7],[8,7],[1,8],[2,8],[3,8],[5,8],[6,8],[7,8],[0,9],[1,9],[4,9],[5,9]];
+      // Frame 2 (Group 2085670778)
+      var f2_raw = [[6,0],[7,0],[6,1],[7,1],[2,2],[3,2],[4,2],[5,2],[0,3],[1,3],[4,3],[5,3],[6,3],[9,3],[3,4],[4,4],[5,4],[7,4],[8,4],[2,5],[3,5],[4,5],[2,6],[3,6],[5,6],[6,6],[2,7],[3,7],[5,7],[6,7],[1,8],[2,8],[5,8],[6,8],[0,9],[1,9],[6,9],[7,9]];
+      // Frame 3 (Group 2085670781)
+      var f3_raw = [[6,0],[7,0],[6,1],[7,1],[10,1],[3,2],[4,2],[5,2],[6,2],[10,2],[2,3],[5,3],[6,3],[7,3],[8,3],[9,3],[2,4],[4,4],[5,4],[6,4],[4,5],[5,5],[6,5],[0,6],[1,6],[4,6],[5,6],[6,6],[7,6],[1,7],[2,7],[3,7],[4,7],[7,7],[8,7],[3,8],[8,8],[9,8],[9,9],[10,9]];
+
+      function _applyOffset(pts) {
+        return pts.map(function(p) { return [p[0] + offX, p[1] + offY]; });
       }
-      var f1 = (frames && Array.isArray(frames[0]) && frames[0].length) ? frames[0] : _deriveFrame(-1);
-      var f3 = (frames && Array.isArray(frames[2]) && frames[2].length) ? frames[2] : _deriveFrame(+1);
-      var f2use = (frames && Array.isArray(frames[1]) && frames[1].length) ? frames[1] : f2;
+
+      var f1 = _applyOffset(f1_raw);
+      var f2use = _applyOffset(f2_raw);
+      var f3 = _applyOffset(f3_raw);
 
       return '' +
         '<div class="dot-card run-panel" data-state="' + (rpv.state || 'idle') + '">' +
@@ -3347,9 +3402,13 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
         '<div style="position:absolute;right:15px;top:50%;transform:translateY(-50%);font-family:var(--font-dot);font-size:35.3px;letter-spacing:3.5px;">15km</div>' +
       '</div>';
     case 'health-course-card':
-      return '<div style="width:100%;height:100%;background:url(\'https://www.figma.com/api/mcp/asset/6e2b38ba-80aa-48e9-8f64-d1c437032962\') center/cover;border-radius:17.9px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative;">' +
-        '<div style="font-family:var(--font);font-weight:700;font-size:15.7px;margin-bottom:10px;">추천 코스</div>' +
-        '<div style="width:50px;height:36px;transform:rotate(90deg);"><img src="https://www.figma.com/api/mcp/asset/7b08d885-48a8-4676-811c-0bb3624cd11f" style="width:100%;height:100%;"/></div>' +
+      return '<div style="width:100%;height:100%;background:url(\'https://www.figma.com/api/mcp/asset/6e2b38ba-80aa-48e9-8f64-d1c437032962\') center/cover;border-radius:32px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative;overflow:hidden;pointer-events:none;">' +
+        '<div style="font-family:var(--font);font-weight:700;font-size:15.7px;margin-bottom:10px;text-shadow:0 1px 4px rgba(0,0,0,0.4);">추천 코스</div>' +
+        '<div style="width:50px;height:36px;transform:rotate(90deg);"><img src="https://www.figma.com/api/mcp/asset/7b08d885-48a8-4676-811c-0bb3624cd11f" style="width:100%;height:100%;filter:drop-shadow(0 1px 4px rgba(0,0,0,0.4));"/></div>' +
+        '<div style="position:absolute;left:12px;bottom:10px;display:flex;align-items:center;gap:4px;opacity:0.8;">' +
+          '<svg width="60" height="12" viewBox="0 0 60 12" fill="none"><path d="M5.5 2h1v8h-1V2zM2 4h1v6H2V4zm7 0h1v6H9V4zm3.5-2h1v8h-1V2zM16 4h1v6h-1V4zm3.5 0h1v6h-1V4z" fill="white" opacity="0.6"/><text x="22" y="10" fill="white" font-size="8" font-family="sans-serif" font-weight="bold">mapbox</text></svg>' +
+          '<div style="width:10px;height:10px;border-radius:50%;border:1px solid white;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:bold;">i</div>' +
+        '</div>' +
       '</div>';
     case 'health-weather-card':
       return '<div style="width:100%;height:100%;background:#FFB01C;border-radius:97px;padding:0 24px;box-sizing:border-box;display:flex;align-items:center;gap:15px;color:#1B1C21;">' +
@@ -3367,22 +3426,19 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
           '<div style="font-family:var(--font);font-weight:600;font-size:13.2px;">10:35</div>' +
         '</div>' +
       '</div>';
-    case 'health-music-card':
-      return '<div style="width:100%;height:100%;background:#1A1D1C;border-radius:15.7px;padding:16.7px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;color:#fff;position:relative;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
-          '<div style="display:flex;gap:16.7px;align-items:center;">' +
-            '<div style="width:67px;height:67px;background:#3B393E;border-radius:21px;display:flex;align-items:center;justify-content:center;">' +
-              '<img src="https://www.figma.com/api/mcp/asset/07bf9bb5-48a8-4676-811c-0bb3624cd11f" style="width:31px;height:31px;"/>' +
-            '</div>' +
-            '<div style="font-family:var(--font);font-weight:600;font-size:15.7px;line-height:1.3;">오늘 날씨에 딱 맞는<br/>플레이리스트</div>' +
-          '</div>' +
-          '<img src="https://www.figma.com/api/mcp/asset/4092920a-0a05-4aa6-941d-467885b38742" style="width:25px;height:25px;"/>' +
+    case 'health-course-card':
+      return '<div class="health-course-card" style="width:100%;height:100%;border-radius:32px;background:#1A1D1C;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;position:relative;overflow:hidden;pointer-events:none;">' +
+        '<img src="https://www.figma.com/api/mcp/asset/ff01314a-579c-4934-8035-7140e6988894" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.25));" />' +
+        '<div style="position:relative;z-index:1;text-align:center;">' +
+          '<div style="font-family:var(--font);font-weight:700;font-size:18px;text-shadow:0 2px 4px rgba(0,0,0,0.5);">추천 코스</div>' +
+          '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="margin-top:8px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">' +
+            '<path d="M5 12h14M12 5l7 7-7 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '</svg>' +
         '</div>' +
-        '<div style="display:flex;flex-direction:column;gap:12.5px;">' +
-          '<div style="font-family:Roboto;font-weight:400;font-size:14.6px;color:#AEABB1;">Jim Hall - Concierto</div>' +
-          '<div style="height:2px;background:#3B393E;position:relative;"><div style="position:absolute;left:0;top:0;bottom:0;width:26%;background:#FCFAFE;"></div></div>' +
+        '<div style="position:absolute;left:12px;bottom:12px;z-index:1;display:flex;align-items:center;gap:4px;">' +
+          '<svg width="50" height="12" viewBox="0 0 65 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.2 3.4c-1.3 0-2.3.4-3.1 1.2V3.6H3.6v8.8h3.5V8.1c0-1.1.7-1.8 1.7-1.8.9 0 1.5.6 1.5 1.7v4.4h3.5V7.6c0-2.6-1.5-4.2-3.6-4.2zM21.5 3.4c-1.3 0-2.3.4-3.1 1.2V3.6h-3.5v8.8h3.5V8.1c0-1.1.7-1.8 1.7-1.8.9 0 1.5.6 1.5 1.7v4.4h3.5V7.6c0-2.6-1.5-4.2-3.6-4.2zM32.8 3.4c-1.3 0-2.3.4-3.1 1.2V3.6h-3.5v8.8h3.5V8.1c0-1.1.7-1.8 1.7-1.8.9 0 1.5.6 1.5 1.7v4.4h3.5V7.6c0-2.6-1.5-4.2-3.6-4.2zM43.1 3.4c-2.4 0-4.3 1.9-4.3 4.5s1.9 4.5 4.3 4.5c1.1 0 2.2-.5 2.9-1.3v1.1h3.5V3.6h-3.5v1.1c-.7-.8-1.8-1.3-2.9-1.3zm0 6.2c-1 0-1.8-.8-1.8-1.7s.8-1.7 1.8-1.7 1.8.8 1.8 1.7-.8 1.7-1.8 1.7zM54.4 3.4c-2.4 0-4.3 1.9-4.3 4.5s1.9 4.5 4.3 4.5c1.1 0 2.2-.5 2.9-1.3v1.1h3.5V0h-3.5v4.7c-.7-.8-1.8-1.3-2.9-1.3zm0 6.2c-1 0-1.8-.8-1.8-1.7s.8-1.7 1.8-1.7 1.8.8 1.8 1.7-.8 1.7-1.8 1.7z" fill="white" fill-opacity="0.6"/></svg>' +
+          '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="7" stroke="white" stroke-opacity="0.6" stroke-width="1.2"/><path d="M8 11V7.5M8 5.5V5" stroke="white" stroke-opacity="0.6" stroke-width="1.2" stroke-linecap="round"/></svg>' +
         '</div>' +
-        '<img src="https://www.figma.com/api/mcp/asset/76826c5a-eca2-4d39-b800-77033a17c88b" style="position:absolute;right:16.7px;top:50%;transform:translateY(-50%);width:4px;height:13.6px;"/>' +
       '</div>';
 
     case 'dot-gallery-img': {
@@ -3513,8 +3569,10 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
       var remaining = mv.remaining || '-1:10';
       var barW = mv.barFull != null ? mv.barFull : 120;
       var barTrack = mv.barTrack != null ? mv.barTrack : 31.48;
+      var isTabRoot = window.currentSurfaceType === window.SURFACE_TYPES.TAB_ROOT;
+      var orangeClass = isTabRoot ? ' is-orange' : '';
       return '' +
-        '<div class="dot-card dot-music dot-music1" data-state="' + (mv.state || 'idle') + '">' +
+        '<div class="dot-card dot-music dot-music1' + orangeClass + '" data-state="' + (mv.state || 'idle') + '">' +
           '<div class="dot-music1__top">' +
             '<div class="dot-music1__artist">' + artist + '</div>' +
             '<div class="dot-music1__album">' + album + '</div>' +
@@ -3544,8 +3602,10 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
       var remaining2 = mv2.remaining || '-1:10';
       var barW2 = mv2.barFull != null ? mv2.barFull : 292;
       var barTrack2 = mv2.barTrack != null ? mv2.barTrack : 77;
+      var isTabRoot = window.currentSurfaceType === window.SURFACE_TYPES.TAB_ROOT;
+      var orangeClass = isTabRoot ? ' is-orange' : '';
       return '' +
-        '<div class="dot-card dot-music dot-music2 dot-music2--actions" data-state="' + (mv2.state || 'idle') + '">' +
+        '<div class="dot-card dot-music dot-music2 dot-music2--actions' + orangeClass + '" data-state="' + (mv2.state || 'idle') + '">' +
           '<div class="dot-music2__top">' +
             '<div class="dot-music2__artistBlock">' +
               '<div class="dot-music2__artist">' + artist2 + '</div>' +
@@ -3607,7 +3667,7 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
           '<div class="dot-music3__top">' +
             '<div class="dot-music3__icon" aria-hidden="true">' +
               '<span class="dot-music3__iconBg"></span>' +
-              '<svg class="dot-music3__noteSvg" width="29.56" height="29.26" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+              '<svg class="dot-music3__noteSvg" width="32" height="32" viewBox="-2 -2 68 68" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
                 // Dot-note icon reconstructed from Figma ellipse positions (percent grid) ·r≈3.5 on 64 canvas
                 '<circle cx="27.98" cy="3.49" r="3.5" fill="#FFFFFF"/>' +   // x=38.28, y=0
                 '<circle cx="35.66" cy="3.49" r="3.5" fill="#FFFFFF"/>' +   // x=50.99, y=0
@@ -3781,6 +3841,13 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
       var bgDots = '';
       for (var yy = 0; yy < rows; yy++) {
         for (var xx = 0; xx < cols; xx++) {
+          // Skip corner dots to give a rounded appearance.
+          if ((xx === 0 && yy === 0) || 
+              (xx === 0 && yy === rows - 1) || 
+              (xx === cols - 1 && yy === 0) || 
+              (xx === cols - 1 && yy === rows - 1)) {
+            continue;
+          }
           var cx = margin + xx * step;
           var cy = margin + yy * step;
           bgDots += '<circle class="dot-timemat__bgDot" cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + BG_DOT + '" />';
@@ -3793,6 +3860,15 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
         var parts = k.split(',');
         var gx = parseInt(parts[0], 10);
         var gy = parseInt(parts[1], 10);
+        
+        // Skip corner dots for active overlay as well.
+        if ((gx === 0 && gy === 0) || 
+            (gx === 0 && gy === rows - 1) || 
+            (gx === cols - 1 && gy === 0) || 
+            (gx === cols - 1 && gy === rows - 1)) {
+          continue;
+        }
+
         var cx2 = margin + gx * step;
         var cy2 = margin + gy * step;
         onDots += '<circle class="dot-timemat__dot" cx="' + cx2 + '" cy="' + cy2 + '" r="' + r + '" fill="' + DOT_COLOR + '" style=\"--i:' + dotIndex + ';\" />';
@@ -3815,8 +3891,13 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
 
     case 'dot-schedule-2x2': {
       var sv = (comp && comp.variant) || {};
-      var date = sv.date || 'May 15';
-      var items = Array.isArray(sv.items) ? sv.items : [];
+      var date = sv.date || '13 May';
+      var items = Array.isArray(sv.items) ? sv.items : [
+        { text: 'Wild Life', tone: 'muted' },
+        { text: 'Blue Mountains', tone: 'muted' },
+        { text: 'Darling Harbour', tone: 'accent' },
+        { text: 'Opera House', tone: 'muted' }
+      ];
       while (items.length < 4) items.push({ text: 'Schedule item', tone: 'muted' });
       var row = function (it) {
         var tone = (it && it.tone) || 'muted';
@@ -3966,7 +4047,7 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
 
     case 'dot-weather-2x1-v1-1': {
       var w2 = (comp && comp.variant) || {};
-      var loc = w2.location || 'Seoul';
+      var loc = w2.location || 'Sydney';
       var wt = w2.weather || 'Sunny';
       // Reuse dot-sun but sized/positioned per spec and dark color.
       return '' +
@@ -4017,87 +4098,33 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
       var drv = (comp && comp.variant) || {};
       var title = drv.title || 'Running coach';
       var subtitle = drv.subtitle || '달릴 준비 되셨나요?';
+
+      // 4-frame runner animation using provided coordinates.
+      // Frames are normalized to a 40x40 viewBox for consistency.
+      var f1_dots = [[26.73,0],[30.08,0],[13.37,3.34],[16.71,3.34],[26.73,3.34],[30.08,3.34],[10.03,6.68],[16.71,6.68],[20.05,6.68],[23.39,6.68],[16.71,10.03],[20.05,10.03],[23.39,10.03],[26.73,10.03],[33.42,10.03],[13.37,13.37],[16.71,13.37],[20.05,13.37],[26.73,13.37],[30.08,13.37],[10.03,16.71],[13.37,16.71],[16.71,16.71],[10.03,20.05],[13.37,20.05],[20.05,20.05],[23.39,20.05],[10.03,23.39],[13.37,23.39],[23.39,23.39],[26.73,23.39],[3.34,26.74],[6.68,26.74],[10.03,26.74],[16.71,26.74],[20.05,26.74],[23.39,26.74],[0,30.08],[3.34,30.08],[13.37,30.08],[16.71,30.08]];
+      var f2_dots = [[20.93,0],[24.42,0],[20.93,3.49],[24.42,3.49],[6.98,6.98],[10.47,6.98],[13.95,6.98],[17.44,6.98],[0,10.47],[3.49,10.47],[13.95,10.47],[17.44,10.47],[20.93,10.47],[31.4,10.47],[10.47,13.95],[13.95,13.95],[17.44,13.95],[24.42,13.95],[27.91,13.95],[6.98,17.44],[10.47,17.44],[13.95,17.44],[6.98,20.93],[10.47,20.93],[17.44,20.93],[20.93,20.93],[6.98,24.42],[10.47,24.42],[17.44,24.42],[20.93,24.42],[3.49,27.91],[6.98,27.91],[17.44,27.91],[20.93,27.91],[0,31.4],[3.49,31.4],[20.93,31.4],[24.42,31.4]];
+      var f3_dots = [[20.33,0],[23.72,0],[20.33,3.39],[23.72,3.39],[33.89,3.39],[10.17,6.78],[13.56,6.78],[16.95,6.78],[20.33,6.78],[33.89,6.78],[6.78,10.17],[16.95,10.17],[20.33,10.17],[23.72,10.17],[27.11,10.17],[30.5,10.17],[6.78,13.56],[13.56,13.56],[16.95,13.56],[20.33,13.56],[13.56,16.94],[16.95,16.94],[20.33,16.94],[0,20.33],[3.39,20.33],[13.56,20.33],[16.95,20.33],[20.33,20.33],[23.72,20.33],[3.39,23.72],[6.78,23.72],[10.17,23.72],[13.56,23.72],[23.72,23.72],[27.11,23.72],[10.17,27.11],[27.11,27.11],[30.5,27.11],[30.5,30.5],[33.89,30.5]];
+      var f4_dots = [[20.93,0],[24.42,0],[20.93,3.49],[24.42,3.49],[6.98,6.98],[10.47,6.98],[13.95,6.98],[17.44,6.98],[0,10.47],[3.49,10.47],[13.95,10.47],[17.44,10.47],[20.93,10.47],[31.4,10.47],[10.47,13.95],[13.95,13.95],[17.44,13.95],[24.42,13.95],[27.91,13.95],[6.98,17.44],[10.47,17.44],[13.95,17.44],[6.98,20.93],[10.47,20.93],[17.44,20.93],[20.93,20.93],[6.98,24.42],[10.47,24.42],[17.44,24.42],[20.93,24.42],[3.49,27.91],[6.98,27.91],[17.44,27.91],[20.93,27.91],[0,31.4],[3.49,31.4],[20.93,31.4],[24.42,31.4]];
+
+      var r = 1.7;
+      function _renderFrame(dots, frameClass) {
+        var s = '<g class="dot-runner-frame ' + frameClass + '">';
+        for (var i = 0; i < dots.length; i++) {
+          s += '<circle cx="' + (dots[i][0] + r) + '" cy="' + (dots[i][1] + r) + '" r="' + r + '" fill="white"/>';
+        }
+        s += '</g>';
+        return s;
+      }
+
       return '' +
         '<div class="dot-card dot-running" data-state="' + (drv.state || 'idle') + '">' +
           '<div class="dot-running__icon">' +
             '<span class="dot-running__icon-bg" aria-hidden="true"></span>' +
-            '<svg class="dot-running__icon-svg" width="24" height="32" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-              // Runner icon: 3-frame discrete loop (CSS keyframes).
-              '<g class="dot-runner-frame dot-runner-frame--a">' +
-                '<circle cx="14" cy="4" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="4" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="7" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="7" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="16" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="16" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="19" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="19" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="20" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="23" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="8" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="5" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="22" r="1.8" fill="white"/>' +
-                '<circle cx="8" cy="25" r="1.8" fill="white"/>' +
-                '<circle cx="5" cy="25" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="22" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="25" r="1.8" fill="white"/>' +
-                '<circle cx="20" cy="28" r="1.8" fill="white"/>' +
-              '</g>' +
-              '<g class="dot-runner-frame dot-runner-frame--b">' +
-                '<circle cx="14" cy="4" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="4" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="7" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="7" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="16" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="16" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="19" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="19" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="20" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="23" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="8" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="5" cy="16" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="22" r="1.8" fill="white"/>' +
-                '<circle cx="8" cy="28" r="1.8" fill="white"/>' +
-                '<circle cx="5" cy="28" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="22" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="25" r="1.8" fill="white"/>' +
-                '<circle cx="20" cy="25" r="1.8" fill="white"/>' +
-              '</g>' +
-              '<g class="dot-runner-frame dot-runner-frame--c">' +
-                '<circle cx="14" cy="4" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="4" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="7" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="7" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="16" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="16" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="19" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="19" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="13" r="1.8" fill="white"/>' +
-                '<circle cx="20" cy="16" r="1.8" fill="white"/>' +
-                '<circle cx="23" cy="16" r="1.8" fill="white"/>' +
-                '<circle cx="8" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="5" cy="10" r="1.8" fill="white"/>' +
-                '<circle cx="11" cy="22" r="1.8" fill="white"/>' +
-                '<circle cx="8" cy="25" r="1.8" fill="white"/>' +
-                '<circle cx="5" cy="28" r="1.8" fill="white"/>' +
-                '<circle cx="14" cy="22" r="1.8" fill="white"/>' +
-                '<circle cx="17" cy="28" r="1.8" fill="white"/>' +
-                '<circle cx="20" cy="28" r="1.8" fill="white"/>' +
-              '</g>' +
+            '<svg class="dot-running__icon-svg" width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+              _renderFrame(f1_dots, 'dot-runner-frame--a') +
+              _renderFrame(f2_dots, 'dot-runner-frame--b') +
+              _renderFrame(f3_dots, 'dot-runner-frame--c') +
+              _renderFrame(f4_dots, 'dot-runner-frame--d') +
             '</svg>' +
           '</div>' +
           '<div class="dot-running__text">' +
@@ -4106,7 +4133,6 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
           '</div>' +
           '<div class="dot-running__dots-arrow">' +
             '<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-              // Discrete dot-by-dot reveal (left→right), then reset (CSS keyframes).
               '<circle class="dot-run-arrow-dot dot-run-arrow-dot--0" cx="6" cy="16" r="2.1" fill="#1B1C21" />' +
               '<circle class="dot-run-arrow-dot dot-run-arrow-dot--1" cx="10.2" cy="16" r="2.1" fill="#1B1C21" />' +
               '<circle class="dot-run-arrow-dot dot-run-arrow-dot--2" cx="14.4" cy="16" r="2.1" fill="#1B1C21" />' +
@@ -4624,8 +4650,13 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
       '</div>';
 
     case 'home-mid-widgets':
-      return '<div class="home-mid-widgets-container" style="display:flex;gap:6px;">' +
-        window.renderAtomicForRole({ role: 'dot-music-1x1' }, { w: 168, h: 168 }) +
+      return '<div class="home-mid-widgets-container" style="display:flex;gap:8px;width:100%;height:168px;">' +
+        '<div style="flex:1;height:168px;">' +
+          window.renderAtomicForRole({ role: 'dot-music-1x1' }, { w: 168, h: 168 }) +
+        '</div>' +
+        '<div style="flex:1;height:168px;">' +
+          window.renderAtomicForRole({ role: 'health-course-card' }, { w: 168, h: 168 }) +
+        '</div>' +
       '</div>';
 
     case 'navigation-bar':
@@ -4651,10 +4682,23 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
           'Settings':'Settings.png', 'Clock':'Clock.png', 'Weather':'Weather.png',
           'Calculator':'Calculator.png', 'Calendar':'Clock.png', 'Notes':'Notes.png',
           'Cloud':'Cloud.png', 'Health':'Health.png', 'Reminder':'Reminder.png',
-          'Store':'Store.png', 'SmartThings':'SmartThings.png'
+          'Store':'Store.png', 'SmartThings':'SmartThings.png',
+          'Maps':'Maps.png', 'YT Music':'YTMusic.png'
         };
+
+        // High-fidelity SVG fallbacks for common apps if PNGs are missing
+        var svgFallbacks = {
+          'Camera': '<div style="width:56px;height:56px;border-radius:20px;background:#1F1F1F;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.1);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" stroke="white" stroke-width="2" fill="none"/><circle cx="12" cy="13" r="3" stroke="white" stroke-width="2" fill="none"/></svg></div>',
+          'Gallery': '<div style="width:56px;height:56px;border-radius:20px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.1);"><svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" fill="#FF4B91"/><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM16 12a2 2 0 1 0 4 0 2 2 0 0 0-4 0zM4 12a2 2 0 1 0 4 0 2 2 0 0 0-4 0zM14.83 9.17a2 2 0 1 0 2.83-2.83 2 2 0 0 0-2.83 2.83zM6.34 17.66a2 2 0 1 0 2.83-2.83 2 2 0 0 0-2.83 2.83zM14.83 14.83a2 2 0 1 0 2.83 2.83 2 2 0 0 0-2.83-2.83zM6.34 6.34a2 2 0 1 0 2.83 2.83 2 2 0 0 0-2.83-2.83z" fill="#FF4B91"/></svg></div>',
+          'Maps': '<div style="width:56px;height:56px;border-radius:20px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.1);"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#4285F4"/><circle cx="12" cy="9" r="3" fill="white"/></svg></div>',
+          'YT Music': '<div style="width:56px;height:56px;border-radius:20px;background:#FF0000;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.1);"><svg width="36" height="36" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="white"/><circle cx="12" cy="12" r="8" fill="#FF0000"/><path d="M10.5 9l5 3-5 3V9z" fill="white"/></svg></div>'
+        };
+
         var file = map[appName] || null;
         if (file) {
+          // Check if file actually exists would be ideal, but here we just try to render
+          // If we know some files are missing, we can use the SVG fallbacks
+          if (svgFallbacks[appName]) return svgFallbacks[appName];
           return '<img src="app-icons/' + file + '" style="width:56px;height:56px;border-radius:' + _R('widget') + ';object-fit:cover;flex-shrink:0;">';
         }
         var glyph = (appName || '·').charAt(0).toUpperCase();
@@ -4663,8 +4707,13 @@ window.renderAtomicForRole = function renderAtomicForRole(comp, rect) {
       }
 
       var iconsHTML = apps.slice(0, 5).map(dockIconHTML).join('');
+      var isTabRoot = window.currentSurfaceType === window.SURFACE_TYPES.TAB_ROOT;
+      var dockStyle = isTabRoot 
+        ? 'background:transparent;border:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;'
+        : _G('widgetPill');
+
       return '<div style="width:100%;height:100%;border-radius:var(--card-radius,' + _R('widget') + ');' +
-        _G('widgetPill') +
+        dockStyle +
         'display:flex;align-items:center;justify-content:space-around;padding:0 12px;box-sizing:border-box;">' +
         iconsHTML +
       '</div>';
@@ -4878,6 +4927,8 @@ window.attachReorderHandlers = function attachReorderHandlers(el, nodeId) {
 window.generateSurfaceScenario = function generateSurfaceScenario(surfaceType) {
   const canvas = document.getElementById('canvas');
   if (!canvas) return;
+
+  window.currentSurfaceType = surfaceType;
 
   const viewport = { width: 451, height: 978 };
   const layout = window.createOneUILayout(viewport, surfaceType);

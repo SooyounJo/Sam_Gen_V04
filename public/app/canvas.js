@@ -224,16 +224,18 @@ function clearDropIndicators() {
 // Also allow dropping on empty canvas area
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('canvas');
-  canvas.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-  canvas.addEventListener('drop', (e) => {
-    e.preventDefault();
-    if (!dragItem) return;
-    // If dropped on canvas itself (not on an item), append to end
-    if (e.target === canvas || e.target.classList.contains('canvas-inner')) {
-      canvas.appendChild(dragItem);
-    }
-    clearDropIndicators();
-  });
+  if (canvas) {
+    canvas.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    canvas.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (!dragItem) return;
+      // If dropped on canvas itself (not on an item), append to end
+      if (e.target === canvas || e.target.classList.contains('canvas-inner')) {
+        canvas.appendChild(dragItem);
+      }
+      clearDropIndicators();
+    });
+  }
 
   // --- Auto-connect to AI Agent server on page load ---
   const indicator = document.getElementById('agentModeIndicator');

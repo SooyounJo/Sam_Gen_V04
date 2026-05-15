@@ -5,7 +5,6 @@ export default function HomePage() {
   return (
     <PageShell
       title="Samsung One UI Prototype"
-      description="루트 구조를 정리한 최소 Next.js 앱입니다. 현재는 MLP Prototype과 Theme Customizer 두 흐름만 유지합니다."
     >
       <div className="page-grid">
         <Link className="page-card" href="/prototype">

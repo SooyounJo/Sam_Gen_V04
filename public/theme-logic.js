@@ -2417,7 +2417,7 @@ function updateOnSelect(id, applyServer) {
   buildEditorBody();
 }
 
-$('theme-select').addEventListener('change', (e) => {
+$('theme-select')?.addEventListener('change', (e) => {
   SELECTED_PREVIEW_INDEX = null;
   INSPECTOR_LAYER = null;
   INSPECTOR_DOM_PATH = null;

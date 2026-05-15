@@ -3,18 +3,33 @@ import Script from "next/script";
 import { useEffect, useState } from "react";
 import DotRunningCoach from "../components/cards/DotRunningCoach";
 import PageShell from "../components/layout/PageShell";
+import TopStatusBar from "../components/layout/TopStatusBar";
 import { mlpTiles, prototypeCards } from "../lib/datasets/prototypeData";
 
 export default function PrototypePage() {
+  const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState("normal"); // "normal" | "dot"
   const [activeDot, setActiveDot] = useState(null);
   const [prompt, setPrompt] = useState("");
   const [scenario, setScenario] = useState("home"); // "lock" | "home"
+  const [scale, setScale] = useState(1);
 
   const LOCK_BG = "https://www.figma.com/api/mcp/asset/5f199753-bacf-4a91-acb7-8eb4910dbbe2";
   const HOME_BG = "https://www.figma.com/api/mcp/asset/fc376bb6-8550-447e-ad03-a9a04a2ff412";
 
   const handleTileClick = (title) => {
+    if (title === "health") {
+      goHealth();
+      return;
+    }
+    if (title === "lock") {
+      goLock();
+      return;
+    }
+    if (title === "home") {
+      goHome();
+      return;
+    }
     if (viewMode === "normal") {
       if (typeof window !== "undefined" && window.pipelineGenerate) {
         window.pipelineGenerate(title);
@@ -25,7 +40,27 @@ export default function PrototypePage() {
   };
 
   useEffect(() => {
+    setMounted(true);
     if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      const availableHeight = window.innerHeight - 180; // Margin for header/controls
+      const availableWidth = window.innerWidth - 700;  // Sidebar (320) + Spacer (320) + Gaps
+      const phoneHeight = 978; 
+      const phoneWidth = 451;
+
+      const scaleH = availableHeight / phoneHeight;
+      const scaleW = availableWidth / phoneWidth;
+      
+      let newScale = Math.min(scaleH, scaleW);
+      if (newScale > 1) newScale = 1;
+      if (newScale < 0.2) newScale = 0.2; // Minimum scale
+      
+      setScale(newScale);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
     // Ensure the phone has a base screen on load.
     let tries = 0;
     const t = setInterval(() => {
@@ -36,10 +71,15 @@ export default function PrototypePage() {
       }
       if (tries > 40) clearInterval(t);
     }, 80);
-    return () => clearInterval(t);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const generateFromPrompt = () => {
+    alert("현재 사용 불가한 기능입니다.");
+    return;
     const v = String(prompt || "").trim();
     if (!v) return;
     if (typeof window !== "undefined" && window.pipelineGenerate) {
@@ -71,51 +111,141 @@ export default function PrototypePage() {
   const leftButtons =
     viewMode === "normal"
       ? [
-          ...mlpTiles.map((t) => ({ key: "mlp-" + t.id, label: t.title, value: t.title })),
-          ...prototypeCards.map((c, idx) => ({ key: "card-" + idx, label: c.title, value: c.title })),
+          { key: "nav-health", label: "Health", value: "health" },
+          { key: "nav-lock", label: "Lock", value: "lock" },
+          { key: "nav-home", label: "Home", value: "home" },
         ]
       : [
           { key: "dot-running", label: "Running coach", value: "dot-running" },
-          { key: "dot-time-matrix", label: "Time Matrix", value: "dot-time-matrix" },
-          { key: "dot-music-1x1", label: "Music 1x1", value: "dot-music-1x1" },
-          { key: "dot-music-1x2", label: "Music 1x2", value: "dot-music-1x2-actions" },
-          { key: "dot-weather-2x1", label: "Weather 2x1", value: "dot-weather-2x1-v1-1" },
-          { key: "dot-temp-1x1", label: "Temp 1x1", value: "dot-temperature-1x1" },
-          { key: "dot-date-1x1", label: "Date 1x1", value: "dot-date-1x1-v1-1" },
-          { key: "dot-schedule-2x2", label: "Schedule 2x2", value: "dot-schedule-2x2" },
+          { key: "nav-health", label: "Health", value: "health" },
+          { key: "nav-lock", label: "Lock", value: "lock" },
+          { key: "nav-home", label: "Home", value: "home" },
+          { key: "dot-time-matrix", label: "Time Matrix", value: "dot-time-matrix", disabled: true },
+          { key: "dot-music-1x1", label: "Music 1x1", value: "dot-music-1x1", disabled: true },
+          { key: "dot-music-1x2", label: "Music 1x2", value: "dot-music-1x2-actions", disabled: true },
+          { key: "dot-weather-2x1", label: "Weather 2x1", value: "dot-weather-2x1-v1-1", disabled: true },
+          { key: "dot-temp-1x1", label: "Temp 1x1", value: "dot-temperature-1x1", disabled: true },
+          { key: "dot-date-1x1", label: "Date 1x1", value: "dot-date-1x1-v1-1", disabled: true },
+          { key: "dot-schedule-2x2", label: "Schedule 2x2", value: "dot-schedule-2x2", disabled: true },
         ];
 
   return (
     <>
       <Head>
         <title>GenUI - Samsung One UI 8.5 Design Builder</title>
+        <style>{`
+          body {
+            background: #0b0b0e !important;
+            overflow: hidden !important;
+          }
+          .app-shell {
+            padding-top: 44px !important; /* Space for TopStatusBar */
+            padding-bottom: 0 !important;
+            max-width: none !important;
+            width: 100% !important;
+            margin: 0 !important;
+            position: relative !important;
+          }
+          .app-header {
+            margin-bottom: 0 !important;
+            padding: 5px 20px !important;
+          }
+          .app-header h1, .app-brand {
+            display: none !important;
+          }
+          .mlp-workspace {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: center !important;
+            align-items: flex-start !important;
+            gap: 40px !important;
+            padding: 20px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+          }
+          .mlp-left {
+            width: 320px !important;
+            flex-shrink: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 20px !important;
+          }
+          .mlp-btn-list {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+          }
+          .mlp-mini-btn {
+            width: 100% !important;
+            padding: 8px !important;
+            font-size: 12px !important;
+          }
+          .mlp-generate {
+            width: 100% !important;
+            margin-top: 10px !important;
+            pointer-events: none !important;
+            opacity: 0.6 !important;
+          }
+          .mlp-right {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            flex-grow: 1 !important;
+            max-width: 600px !important;
+            min-width: 0 !important;
+          }
+          .canvas-frame.mlp-phone {
+            height: 978px !important;
+            width: 451px !important;
+            margin: 0 !important;
+            flex-shrink: 0 !important;
+            border-radius: 44px !important;
+            overflow: hidden !important;
+          }
+          .canvas-inner {
+            zoom: 1 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            position: relative !important;
+            top: 0 !important;
+            left: 0 !important;
+          }
+          .canvas-wrap {
+            transform-origin: top center;
+            transition: transform 0.2s ease-out;
+          }
+          .mlp-phone-controls {
+            margin-bottom: 15px !important;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+          }
+          .mlp-phone-controls button {
+            min-width: 80px;
+            padding: 8px 16px !important;
+          }
+        `}</style>
       </Head>
 
       <PageShell
-        title="MLP Prototype"
-        description="MLP 결과 및 핵심 glance 카드들을 독립 컴포넌트로 분리하여 관리하는 프로토타입 페이지입니다."
         backHref="/"
       >
+        <TopStatusBar />
         <div className="mlp-workspace">
-          {/* Left: tiny buttons + generate */}
           <aside className="mlp-left">
-            <div className="mlp-mode-toggle" role="tablist" aria-label="MLP mode">
-              <button type="button" className={viewMode === "normal" ? "is-active" : ""} onClick={() => setViewMode("normal")}>
-                Normal
-              </button>
-              <button type="button" className={viewMode === "dot" ? "is-active" : ""} onClick={() => setViewMode("dot")}>
-                Dot
-              </button>
-            </div>
-
             <div className="mlp-btn-list" aria-label="MLP buttons">
               {leftButtons.map((b) => (
-                <button
-                  key={b.key}
-                  type="button"
-                  className={"mlp-mini-btn" + (viewMode === "dot" && activeDot === b.value ? " is-active" : "")}
-                  onClick={() => handleTileClick(b.value)}
-                >
+                  <button
+                    key={b.key}
+                    type="button"
+                    className={"mlp-mini-btn" + (viewMode === "dot" && activeDot === b.value ? " is-active" : "") + (scenario === b.value ? " is-scenario-active" : "")}
+                    onClick={() => !b.disabled && handleTileClick(b.value)}
+                    disabled={b.disabled}
+                    style={b.disabled ? { opacity: 0.4, cursor: "not-allowed" } : (scenario === b.value ? { borderColor: '#64e9e3', color: '#64e9e3' } : {})}
+                  >
                   {b.label}
                 </button>
               ))}
@@ -137,32 +267,22 @@ export default function PrototypePage() {
             </div>
           </aside>
 
-          {/* Right: mobile interface focused */}
           <section className="mlp-right">
-            <div className="mlp-phone-controls">
-              <button type="button" onClick={goLock}>
-                Lock
-              </button>
-              <button type="button" onClick={goHome}>
-                Home
-              </button>
-              <button type="button" onClick={goHealth}>
-                Health
-              </button>
-            </div>
-
-            {viewMode === "normal" ? (
-              <div className="canvas-wrap" id="canvasWrap" style={{ background: "transparent", padding: 0, margin: 0, display: "flex", justifyContent: "center" }}>
+            {mounted && (viewMode === "normal" ? (
+              <div className="canvas-wrap" id="canvasWrap" style={{ background: "transparent", padding: 0, margin: 0, display: "flex", justifyContent: "center", transform: `scale(${scale})` }}>
                 <div style={{ position: "relative" }}>
                   <div className="canvas-frame mlp-phone" id="canvasFrame">
                     <div
                       className="canvas-inner"
                       id="canvas"
                       style={{
-                        backgroundImage: scenario === "health" ? "none" : `url(${scenario === "lock" ? LOCK_BG : HOME_BG})`,
-                        backgroundColor: scenario === "health" ? "#f1f1f3" : "transparent",
+                        backgroundColor: scenario === "health" ? "#F2F2F2" : "#5974B2",
                         backgroundSize: "cover",
                         backgroundPosition: "center",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "stretch",
+                        justifyContent: "flex-start"
                       }}
                     ></div>
                   </div>
@@ -171,10 +291,10 @@ export default function PrototypePage() {
                 <div id="pipelineOutput" style={{ display: "none" }}></div>
               </div>
             ) : (
-              <div className="canvas-wrap" style={{ background: "transparent", padding: 0, margin: 0, display: "flex", justifyContent: "center" }}>
+              <div className="canvas-wrap" style={{ background: "transparent", padding: 0, margin: 0, display: "flex", justifyContent: "center", transform: `scale(${scale})` }}>
                 <div style={{ position: "relative" }}>
                   <div className="canvas-frame mlp-phone">
-                    <div className="canvas-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#F2F2F7", overflow: "hidden" }}>
+                    <div className="canvas-inner" style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "#5974B2", overflow: "hidden" }}>
                       {activeDot === "dot-running" && <DotRunningCoach />}
                       {activeDot && activeDot !== "dot-running" && (
                         <div
@@ -193,8 +313,11 @@ export default function PrototypePage() {
                   </div>
                 </div>
               </div>
-            )}
+            ))}
           </section>
+
+          {/* Right spacer to balance the grid and keep the phone centered */}
+          <div className="mlp-spacer" style={{ width: '320px', flexShrink: 0 }}></div>
         </div>
       </PageShell>
 
